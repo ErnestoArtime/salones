@@ -1,0 +1,194 @@
+{
+  "version": 1,
+  "newProjectRoot": "apps",
+  "projects": {
+    "salon-app": {
+      "projectType": "application",
+      "root": "apps/salon-app",
+      "sourceRoot": "apps/salon-app/src",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "outputPath": "dist/apps/salon-app",
+            "index": "apps/salon-app/src/index.html",
+            "browser": "apps/salon-app/src/main.ts",
+            "tsConfig": "apps/salon-app/tsconfig.app.json",
+            "styles": [
+              "tokens.css",
+              "libs/ui/styles.css"
+            ],
+            "assets": []
+          },
+          "configurations": {
+            "production": {
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": false
+                },
+                "fonts": false
+              },
+              "outputHashing": "all",
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "1mb",
+                  "maximumError": "2mb"
+                }
+              ]
+            },
+            "development": {
+              "optimization": false,
+              "sourceMap": true
+            },
+            "native": {
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": false
+                },
+                "fonts": false
+              },
+              "outputHashing": "all",
+              "fileReplacements": [
+                {
+                  "replace": "libs/data-access/src/environment.ts",
+                  "with": ".local/native-environment.ts"
+                }
+              ]
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "options": {
+            "buildTarget": "salon-app:build:development",
+            "port": 4300,
+            "host": "127.0.0.1",
+            "proxyConfig": "infra/proxy.dev.json"
+          }
+        }
+      }
+    },
+    "booking-web": {
+      "projectType": "application",
+      "root": "apps/booking-web",
+      "sourceRoot": "apps/booking-web/src",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "outputPath": "dist/apps/booking-web",
+            "index": "apps/booking-web/src/index.html",
+            "browser": "apps/booking-web/src/main.ts",
+            "tsConfig": "apps/booking-web/tsconfig.app.json",
+            "styles": [
+              "tokens.css",
+              "libs/ui/styles.css"
+            ],
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "apps/booking-web/public",
+                "output": "/"
+              }
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": false
+                },
+                "fonts": false
+              },
+              "outputHashing": "all",
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "1mb",
+                  "maximumError": "2mb"
+                }
+              ]
+            },
+            "development": {
+              "optimization": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "options": {
+            "buildTarget": "booking-web:build:development",
+            "port": 4301,
+            "host": "127.0.0.1",
+            "proxyConfig": "infra/proxy.dev.json"
+          }
+        }
+      }
+    },
+    "superadmin": {
+      "projectType": "application",
+      "root": "apps/superadmin",
+      "sourceRoot": "apps/superadmin/src",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "outputPath": "dist/apps/superadmin",
+            "index": "apps/superadmin/src/index.html",
+            "browser": "apps/superadmin/src/main.ts",
+            "tsConfig": "apps/superadmin/tsconfig.app.json",
+            "styles": [
+              "tokens.css",
+              "libs/ui/styles.css"
+            ],
+            "assets": []
+          },
+          "configurations": {
+            "production": {
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": false
+                },
+                "fonts": false
+              },
+              "outputHashing": "all",
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "1mb",
+                  "maximumError": "2mb"
+                }
+              ]
+            },
+            "development": {
+              "optimization": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "options": {
+            "buildTarget": "superadmin:build:development",
+            "port": 4302,
+            "host": "127.0.0.1",
+            "proxyConfig": "infra/proxy.dev.json"
+          }
+        }
+      }
+    }
+  }
+}

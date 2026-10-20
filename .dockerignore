@@ -1,0 +1,13 @@
+node_modules
+dist
+.git
+.nx
+.env
+backups
+test-results
+playwright-report
+
+.local
+.angular
+.env.*
+!.env.example

@@ -1,0 +1,16 @@
+{
+  "appId": "com.lavia.salon",
+  "appName": "Lav\u00eda",
+  "webDir": "../../dist/apps/salon-app/browser",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    },
+    "CapacitorCookies": {
+      "enabled": true
+    }
+  }
+}

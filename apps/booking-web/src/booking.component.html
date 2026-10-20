@@ -1,0 +1,343 @@
+<div class="booking-shell public-salon">
+  <a class="skip-link" [href]="anchor('contenido')">Saltar al contenido</a>
+  <header class="booking-header">
+    <a class="wordmark" [href]="slug ? '?salon=' + slug : '/booking/'" aria-label="Lavía · inicio">lavía<span class="brand-dot" aria-hidden="true">.</span></a>
+    <nav class="public-nav" aria-label="Navegación del salón">
+      @if (salon() && !cancelId() && step() === 1) {
+        <a [href]="anchor('experiencias')" class="nav-link">Experiencias</a>
+        <a [href]="anchor('visita')" class="nav-link">Tu visita</a>
+        <a [href]="anchor('catalogo')" class="button primary">Reservar cita<lv-icon name="arrow" /></a>
+      } @else { <span class="quiet">Un momento para ti.</span> }
+    </nav>
+  </header>
+  @if (loading()) {
+    <div class="boot" role="status">Preparando tu visita…</div>
+  } @else if (!salon()) {
+    <main id="contenido" class="onboarding">
+      <h1>Tu próxima cita<br />empieza aquí.</h1>
+      <p class="muted">
+        Abre el enlace que te ha compartido tu salón o escribe su identificador.
+      </p>
+      <form class="stack" (ngSubmit)="openSalon()">
+        <label
+          >Identificador del salón<input
+            name="slug"
+            [(ngModel)]="slug"
+            placeholder="mi-salon"
+            required
+        /></label>
+        @if (error()) {
+          <p class="error" role="alert">{{ error() }}</p>
+        }
+        <button class="button primary">
+          Ver salón<lv-icon name="arrow" />
+        </button>
+      </form>
+    </main>
+  } @else {
+    @if (step() === 1 && !cancelId()) {
+      <section class="salon-hero" [class.without-photo]="!heroImage()" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="salon-name">{{ salonName() }}</p>
+          <h1 id="hero-title" [class.long-title]="pageSettings().hero_title.length>50">{{pageSettings().hero_title}}</h1>
+          <p>{{pageSettings().hero_description}}</p>
+          <a [href]="anchor('catalogo')" class="button primary hero-cta" [class.long-label]="pageSettings().hero_button.length>24">{{pageSettings().hero_button}}<lv-icon name="arrow" /></a>
+          <div class="hero-note"><lv-icon name="calendar" /><span>Reserva online, sin crear una cuenta.<br />Elige tu servicio y consulta la agenda.</span></div>
+        </div>
+        @if (heroImage(); as src) {
+          <figure class="hero-photo"><img [src]="src" [alt]="pageSettings().hero_asset_id ? 'Portada de ' + salonName() : 'Imagen de referencia de peluquería'" width="1200" height="1800" fetchpriority="high" /><figcaption>{{pageSettings().hero_caption}}</figcaption></figure>
+        }
+        <div class="hero-bottom"><span>Pelo, manos, piel. Y un poco de calma.</span><a [href]="anchor('experiencias')" aria-label="Explorar las categorías de servicios">Explora los cuidados <span aria-hidden="true">↓</span></a></div>
+      </section>
+      <section id="experiencias" class="experience-section" aria-labelledby="experience-title">
+        <div class="section-title"><h2 id="experience-title">{{pageSettings().categories_title}}</h2><p>{{pageSettings().categories_description}}</p></div>
+        <div class="experience-grid">
+          @for (c of categories(); track c.id) {
+            <article class="experience">
+              <button class="experience-image" (click)="showCategory(c.id)" [attr.aria-label]="'Explorar ' + c.title">
+                @if (c.src) {<img [src]="c.src" [alt]="c.alt" width="800" height="1000" loading="lazy" />} @else {<span class="category-placeholder">{{c.title}}</span>}
+                <span class="image-arrow" aria-hidden="true"><lv-icon name="arrow" /></span>
+              </button>
+              <h3>{{ c.title }}</h3><p>{{ c.detail }}</p>
+              <span class="category-availability">{{ categoryCount(c.id) ? categoryCount(c.id) + (categoryCount(c.id) === 1 ? ' servicio' : ' servicios') : 'Sin servicios publicados' }}</span>
+            </article>
+          }
+        </div>
+      </section>
+    }
+    <main id="contenido" class="booking-layout" [class.catalog-layout]="step() === 1 && !cancelId()">
+      @if (step() > 1 || cancelId()) {
+      <aside class="booking-intro">
+        <p class="quiet">{{ salon()?.name }}</p>
+        <h1>Haz espacio<br />para ti.</h1>
+        <p class="muted salon-description">
+          Elige tu servicio y encuentra ese momento en el que todo lo demás
+          puede esperar.
+        </p>
+        <div class="booking-location">
+          <p>{{ branch()?.name }}</p>
+          <p class="quiet">{{ branch()?.address }}</p>
+          <p class="quiet" style="margin-top: 12px">
+            <lv-icon name="clock" /> Horarios en {{ zone() }}
+          </p>
+        </div>
+      </aside>
+      }
+      <section id="catalogo" class="booking-flow" aria-label="Reserva de cita">
+        @if (cancelId()) {
+          @if (cancelled()) {
+            <div class="confirmation-mark"><lv-icon name="check" /></div>
+            <h2>Cita cancelada.</h2>
+            <p class="muted">
+              El horario vuelve a estar disponible. Cuando quieras, buscamos
+              otro momento.
+            </p>
+            <a class="button primary continue" [href]="'?salon=' + slug"
+              >Reservar otra cita</a
+            >
+          } @else {
+            <h2>¿Quieres cancelar tu cita?</h2>
+            <p class="muted">
+              Al confirmar, el horario quedará libre para otra persona.
+            </p>
+            @if (error()) {
+              <p class="error" role="alert">{{ error() }}</p>
+            }
+            <button
+              class="button primary continue"
+              [disabled]="busy()"
+              (click)="cancel()"
+            >
+              {{ busy() ? "Cancelando…" : "Cancelar mi cita" }}
+            </button>
+          }
+        } @else {
+          @if (step() < 4) {
+            <div class="steps" aria-label="Progreso">
+              <span [class.current]="step() === 1">Servicio</span
+              ><span aria-hidden="true">/</span
+              ><span [class.current]="step() === 2">Horario</span
+              ><span aria-hidden="true">/</span
+              ><span [class.current]="step() === 3">Tus datos</span>
+            </div>
+          }
+          @if (error()) {
+            <p class="error" role="alert">{{ error() }}</p>
+          }
+          @switch (step()) {
+            @case (1) {
+              <div class="section-title catalog-heading"><div><h2>{{pageSettings().catalog_title}}</h2><p>{{pageSettings().catalog_description}}</p></div>
+                <label class="service-search"><span>Buscar un servicio</span><input type="search" placeholder="Corte, manicura, masaje…" [ngModel]="search()" (ngModelChange)="search.set($event)" /></label>
+              </div>
+              <div class="catalog-filters" role="group" aria-label="Filtrar servicios por categoría">
+                <button class="category-filter" [class.active]="category() === 'all'" [attr.aria-pressed]="category() === 'all'" (click)="showCategory('all')">Todos<span>{{ salon()?.services?.length }}</span></button>
+                @for (c of availableCategories(); track c.id) {
+                  <button class="category-filter" [class.active]="category() === c.id" [attr.aria-pressed]="category() === c.id" (click)="showCategory(c.id)"><span class="filter-name">{{ c.label }}</span><span>{{ categoryCount(c.id) }}</span></button>
+                }
+              </div>
+              <p class="result-count" role="status" aria-live="polite">{{ filteredServices().length }} {{ filteredServices().length === 1 ? 'servicio disponible' : 'servicios disponibles' }}{{ category() === 'all' ? '' : ' en esta categoría' }}</p>
+              <div class="service-gallery">
+                @for (s of filteredServices(); track s.id) {
+                  <article class="service-card" [class.is-selected]="serviceId() === s.id">
+                    @if (serviceImage(s); as src) {<img [src]="src" [alt]="s.photo_asset_id ? s.name : categoryLabels[s.category]" width="800" height="600" loading="lazy" />} @else {<div class="service-no-photo">{{categoryLabels[s.category]}}</div>}
+                    <div class="service-card-body"><p class="service-category">{{ categoryLabels[s.category] }}</p><h3>{{ s.name }}</h3>@if(s.description) {<p class="service-description">{{s.description}}</p>}<p class="service-duration"><lv-icon name="clock" />{{ s.duration_minutes }} minutos · Pago en el salón</p>
+                      <div class="service-card-bottom"><strong>{{ money(s.price_cents, s.currency) }}</strong>
+                        <button class="button" [class.primary]="serviceId() === s.id" [attr.aria-pressed]="serviceId() === s.id" [attr.aria-label]="(serviceId() === s.id ? 'Seleccionado: ' : 'Elegir ') + s.name" (click)="choose(s.id)">{{ serviceId() === s.id ? 'Seleccionado' : 'Elegir' }}<lv-icon [name]="serviceId() === s.id ? 'check' : 'plus'" /></button>
+                      </div>
+                    </div>
+                  </article>
+                } @empty {
+                  <div class="catalog-empty"><h3>{{ search() ? 'No encontramos ese servicio.' : 'Este cuidado aún no está en el catálogo.' }}</h3><p>Prueba con otra categoría o consulta directamente con el salón.</p><button class="button" (click)="showCategory('all')">Ver todos los servicios<lv-icon name="arrow" /></button></div>
+                }
+              </div>
+              <div class="reservation-bar" [class.has-selection]="!!service()" aria-label="Servicio elegido">
+                <div>@if (service()) {<span class="quiet">Tu elección</span><strong>{{ service()?.name }}</strong><span>{{ money(service()?.price_cents ?? 0, service()?.currency) }} · {{ service()?.duration_minutes }} min</span>} @else {<strong>Tu próxima pausa empieza aquí.</strong><span>Elige un servicio para consultar los horarios.</span>}</div>
+                <button class="button primary" [disabled]="!serviceId()" (click)="next()">Elegir horario<lv-icon name="arrow" /></button>
+              </div>
+            }
+            @case (2) {
+              <h2>Encuentra tu momento.</h2>
+              <div class="stack">
+                @if ((salon()?.branches?.length ?? 0) > 1) {
+                  <label
+                    >Sede<select
+                      [ngModel]="branchId()"
+                      (ngModelChange)="branchChanged($event)"
+                    >
+                      @for (b of salon()?.branches; track b.id) {
+                        <option [value]="b.id">{{ b.name }}</option>
+                      }
+                    </select></label
+                  >
+                }
+                <label
+                  >Profesional<select
+                    [ngModel]="employeeId()"
+                    (ngModelChange)="employeeId.set($event); loadSlots()"
+                  >
+                    @for (e of employees(); track e.id) {
+                      <option [value]="e.id">{{ e.name }}</option>
+                    } @empty {
+                      <option value="">Sin profesionales disponibles</option>
+                    }
+                  </select></label
+                ><label
+                  >Fecha<input
+                    type="date"
+                    [ngModel]="date()"
+                    (ngModelChange)="date.set($event); loadSlots()"
+                    [min]="today()"
+                /></label>
+                <p class="quiet">
+                  {{ service()?.name }} · {{ service()?.duration_minutes }} min
+                  ·
+                  {{ money(service()?.price_cents ?? 0, service()?.currency) }}
+                </p>
+                @if (slotsBusy()) {
+                  <p role="status">Buscando huecos en la agenda…</p>
+                } @else if (slots().length) {
+                  <div class="slots" aria-label="Horarios disponibles">
+                    @for (slot of slots(); track slot) {
+                      <button
+                        class="slot"
+                        [class.selected]="time() === slot"
+                        [attr.aria-pressed]="time() === slot"
+                        (click)="time.set(slot)"
+                      >
+                        {{ hour(slot, zone()) }}
+                      </button>
+                    }
+                  </div>
+                } @else {
+                  <div class="empty">
+                    <h3>Hoy está todo reservado.</h3>
+                    <p>Prueba con otra fecha o profesional.</p>
+                  </div>
+                }
+              </div>
+              <div class="row spread continue">
+                <button class="text-button" (click)="step.set(1)">
+                  ← Servicios</button
+                ><button
+                  class="button primary"
+                  [disabled]="!time()"
+                  (click)="step.set(3)"
+                >
+                  Continuar<lv-icon name="arrow" />
+                </button>
+              </div>
+            }
+            @case (3) {
+              <h2>Ya casi es tuyo.</h2>
+              <div class="booking-summary">
+                <h3>{{ service()?.name }}</h3>
+                <p class="quiet" style="margin-block: 8px">
+                  {{ prettyDate() }} · {{ hour(time(), zone()) }}<br />Con
+                  {{ employee()?.name }}
+                </p>
+                <strong>{{
+                  money(service()?.price_cents ?? 0, service()?.currency)
+                }}</strong>
+                <p class="quiet">Pago en el salón.</p>
+              </div>
+              <form class="stack" (ngSubmit)="reserve()">
+                <label
+                  >Tu nombre<input
+                    name="name"
+                    [(ngModel)]="customer.name"
+                    autocomplete="name"
+                    required
+                    maxlength="140" /></label
+                ><label
+                  >Teléfono<input
+                    name="phone"
+                    type="tel"
+                    [(ngModel)]="customer.phone"
+                    autocomplete="tel"
+                    required
+                    minlength="5"
+                    maxlength="30" /></label
+                ><label
+                  >Correo electrónico · opcional<input
+                    name="email"
+                    type="email"
+                    [(ngModel)]="customer.email"
+                    autocomplete="email"
+                    maxlength="254" /></label
+                ><label class="check-label"
+                  ><input
+                    type="checkbox"
+                    name="consent"
+                    [(ngModel)]="consent"
+                    required
+                  />Autorizo al salón a usar estos datos para gestionar mi
+                  cita.</label
+                >
+                <p class="field-help">
+                  Puedes cancelar con el enlace que recibirás al confirmar.
+                  Guarda ese enlace.
+                </p>
+                <button
+                  class="button primary wide"
+                  [disabled]="busy() || !consent"
+                >
+                  {{ busy() ? "Confirmando…" : "Confirmar mi cita"
+                  }}<lv-icon name="check" /></button
+                ><button
+                  class="text-button"
+                  type="button"
+                  (click)="step.set(2)"
+                >
+                  ← Cambiar horario
+                </button>
+              </form>
+            }
+            @case (4) {
+              <div class="confirmation-mark"><lv-icon name="check" /></div>
+              <h2>Nos vemos pronto,<br />{{ customer.name.split(" ")[0] }}.</h2>
+              <p class="muted" style="margin-block: 20px">
+                Tu cita está confirmada en {{ salon()?.name }}.
+              </p>
+              <div class="booking-summary">
+                <h3>{{ service()?.name }}</h3>
+                <p style="margin-block: 12px">
+                  {{ prettyDate() }}<br />{{ hour(time(), zone()) }} ·
+                  {{ employee()?.name }}
+                </p>
+                <strong>{{
+                  money(service()?.price_cents ?? 0, service()?.currency)
+                }}</strong>
+              </div>
+              <div class="stack">
+                <button class="button" (click)="downloadCalendar()">
+                  <lv-icon name="calendar" />Añadir al calendario</button
+                ><a class="button" [href]="cancellationUrl()"
+                  >Gestionar cancelación<lv-icon name="link"
+                /></a>
+                <p class="quiet">
+                  Guarda el enlace de cancelación antes de cerrar esta página.
+                  No se envían confirmaciones por correo en esta versión.
+                </p>
+              </div>
+            }
+          }
+        }
+      </section>
+    </main>
+    @if (step() === 1 && !cancelId()) {
+      <section id="visita" class="visit-section" [class.without-photo]="!visitImage()" aria-labelledby="visit-title">
+        @if (visitImage(); as src) {<figure><img [src]="src" [alt]="pageSettings().visit_asset_id ? 'El salón ' + salonName() : 'Imagen de referencia de un salón'" width="1000" height="667" loading="lazy" />@if (!pageSettings().visit_asset_id) {<figcaption>Fotografía de referencia, no del salón.</figcaption>}</figure>}
+        <div class="visit-copy"><h2 id="visit-title">{{pageSettings().visit_title}}</h2><p>{{pageSettings().visit_description}}</p>
+          @for (b of salon()?.branches; track b.id) {<address><strong>{{ b.name }}</strong><span>{{ b.address || 'Consulta la dirección con el salón.' }}</span><small>Horarios en {{ b.timezone }}</small></address>}
+          <a [href]="anchor('catalogo')" class="text-button">Elegir mi cuidado<lv-icon name="arrow" /></a>
+        </div>
+      </section>
+    }
+  }
+  <footer class="page-foot">
+    <span>{{pageSettings().footer_text}}@if(usesReferences()) {<small class="photo-credit">Las fotos genéricas son referencias de <a href="https://www.pexels.com" target="_blank" rel="noopener noreferrer">Pexels</a>.</small>}</span
+    ><a class="text-button" href="/"
+      >Acceso para el salón<lv-icon name="arrow"
+    /></a>
+  </footer>
+</div>

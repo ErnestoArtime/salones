@@ -1,0 +1,1 @@
+Supabase Docker reference: self-hosted/v0.8.3, commit bc27d2661edd09a5d0b8d76ce33da6d4071a756e. roles.sql and jwt.sql copied from https://github.com/supabase/supabase (Apache-2.0). Only Database, Auth, REST and Storage are deployed; Studio, Realtime, Edge Functions and analytics are omitted. Application tables live in private schema salon, not the PostgREST exposed schema.

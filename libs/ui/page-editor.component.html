@@ -1,0 +1,70 @@
+@if (!manage()) {
+  <section class="empty"><h2>La página la personalizan propiedad y gerencia.</h2><p>Tu rol no permite publicar cambios.</p></section>
+} @else {
+  <section class="page-editor" aria-label="Personalización de la página de clientes">
+    <div class="editor-heading"><div><h1>Tu salón, a tu manera.</h1><p class="muted">Fotos y palabras propias para recibir a tus clientes.</p></div><a class="button" [href]="publicUrl()" target="_blank" rel="noopener">Ver página pública<lv-icon name="arrow" /></a></div>
+    <div class="editor-tabs" role="group" aria-label="Secciones de personalización">
+      <button class="button" [class.primary]="tab()==='page'" [attr.aria-pressed]="tab()==='page'" (click)="tab.set('page')">Portada y textos</button>
+      <button class="button" [class.primary]="tab()==='categories'" [attr.aria-pressed]="tab()==='categories'" (click)="tab.set('categories')">Categorías</button>
+      <button class="button" [class.primary]="tab()==='services'" [attr.aria-pressed]="tab()==='services'" (click)="tab.set('services')">Fotos de servicios</button>
+      <button class="button" [class.primary]="tab()==='library'" [attr.aria-pressed]="tab()==='library'" (click)="tab.set('library')">Biblioteca</button>
+    </div>
+    @if (error()) {<p class="error" role="alert">{{error()}}</p>}
+    @if (notice()) {<p class="success" role="status">{{notice()}}</p>}
+    @if (loading()) {<p role="status">Cargando tu página…</p>} @else {
+      <label class="check-label rights"><input type="checkbox" [(ngModel)]="rights" [disabled]="busy()" />Confirmo que puedo publicar estas fotos y que cuento con el permiso de las personas que aparecen.</label>
+      <p class="field-help">JPEG, PNG o WebP · hasta 5 MB y 16 megapíxeles. Las fotos se guardan en el servidor del salón y se publican al guardar su selección.</p>
+      <form class="editor-form" (ngSubmit)="publish()" [hidden]="tab()!=='page' && tab()!=='categories'">
+        <fieldset [disabled]="busy()" [hidden]="tab()!=='page'">
+          <legend>Portada y visita</legend>
+          <div class="photo-fields">
+            <div class="photo-field"><h2>Foto de portada</h2>
+              @if (page.hero_asset_id) {<img [src]="photo(page.hero_asset_id)" alt="Vista previa de la portada" />}
+              <label>Subir foto de portada<input type="file" accept="image/jpeg,image/png,image/webp" (change)="upload($event,'hero')" [disabled]="!rights || busy()" /></label>
+              <label>Foto de portada en biblioteca<select [ngModel]="page.hero_asset_id || ''" (ngModelChange)="page.hero_asset_id=$event || null" name="hero_asset"><option value="">Sin foto propia</option>@for (a of assets;track a.id;let i=$index) {<option [value]="a.id">Foto {{i+1}} · {{a.id.slice(0,8)}}</option>}</select></label>
+            </div>
+            <div class="photo-field"><h2>Foto de la sección de visita</h2>
+              @if (page.visit_asset_id) {<img [src]="photo(page.visit_asset_id)" alt="Vista previa del salón" />}
+              <label>Subir foto de tu salón<input type="file" accept="image/jpeg,image/png,image/webp" (change)="upload($event,'visit')" [disabled]="!rights || busy()" /></label>
+              <label>Foto de visita en biblioteca<select [ngModel]="page.visit_asset_id || ''" (ngModelChange)="page.visit_asset_id=$event || null" name="visit_asset"><option value="">Sin foto propia</option>@for (a of assets;track a.id;let i=$index) {<option [value]="a.id">Foto {{i+1}} · {{a.id.slice(0,8)}}</option>}</select></label>
+            </div>
+          </div>
+          <label class="check-label"><input type="checkbox" name="references" [(ngModel)]="page.show_reference_photos" />Usar fotos de referencia donde todavía no haya una foto propia</label>
+          <div class="editor-copy-fields">
+            @for (f of textFields;track f.key) {
+              <label>{{f.label}}@if (f.multiline) {<textarea [name]="f.key" [(ngModel)]="page[f.key]" [maxlength]="f.max" required rows="3"></textarea>} @else {<input [name]="f.key" [(ngModel)]="page[f.key]" [maxlength]="f.max" [required]="f.key!=='display_name'" />}</label>
+            }
+          </div>
+        </fieldset>
+        <fieldset [disabled]="busy()" [hidden]="tab()!=='categories'">
+          <legend>Categorías del catálogo</legend><p class="muted">Cambia nombres, descripciones y orden. Reasigna los servicios antes de eliminar una categoría.</p>
+          <div class="category-editors">
+            @for (c of categories;track c.id;let i=$index) {
+              <section class="category-editor" [attr.aria-label]="'Editar categoría ' + c.name">
+                <div class="category-actions"><h3>{{c.name}}</h3><div class="row"><button class="icon-button" type="button" [attr.aria-label]="'Subir categoría '+c.name" [disabled]="i===0" (click)="moveCategory(i,-1)">↑</button><button class="icon-button" type="button" [attr.aria-label]="'Bajar categoría '+c.name" [disabled]="i===categories.length-1" (click)="moveCategory(i,1)">↓</button><button class="text-button" type="button" [disabled]="c.id==='other'" (click)="removeCategory(i)">Eliminar</button></div></div>
+                <div class="category-fields"><div class="stack"><label>Nombre de categoría<input [name]="'category_name_'+c.id" [(ngModel)]="c.name" required maxlength="50" /></label><label>Descripción de categoría<input [name]="'category_description_'+c.id" [(ngModel)]="c.description" maxlength="160" /></label><label class="check-label"><input type="checkbox" [name]="'featured_'+c.id" [(ngModel)]="c.featured" />Mostrar como experiencia en portada</label><label>Imagen de referencia<select [name]="'fallback_'+c.id" [(ngModel)]="c.fallback_image"><option value="hair">Peluquería</option><option value="nails">Manicura</option><option value="barber">Barbería</option><option value="spa">Spa y facial</option><option value="massage">Masajes</option><option value="salon">Salón</option></select></label></div>
+                  <div class="photo-field">@if (c.photo_asset_id) {<img [src]="photo(c.photo_asset_id)" [alt]="'Foto de '+c.name" />}
+                    <label>Subir foto de categoría<input type="file" accept="image/jpeg,image/png,image/webp" (change)="upload($event,'category',i)" [disabled]="!rights || busy()" /></label>
+                    <label>Foto de categoría en biblioteca<select [name]="'photo_'+c.id" [ngModel]="c.photo_asset_id || ''" (ngModelChange)="c.photo_asset_id=$event || null"><option value="">Sin foto propia</option>@for (a of assets;track a.id;let n=$index) {<option [value]="a.id">Foto {{n+1}} · {{a.id.slice(0,8)}}</option>}</select></label>
+                  </div>
+                </div>
+              </section>
+            }
+          </div>
+          <button class="button" type="button" (click)="addCategory()" [disabled]="categories.length>=20"><lv-icon name="plus" />Añadir categoría</button>
+        </fieldset>
+        <div class="editor-save"><p class="quiet">Los textos y las categorías se publican juntos. Las fotos de servicios se guardan en su propia sección.</p><button class="button primary" [disabled]="busy()">{{busy()?'Guardando…':'Guardar y publicar'}}<lv-icon name="check" /></button></div>
+      </form>
+      @if (tab()==='services') {
+        <section class="service-photo-editor"><h2>El detalle de cada servicio.</h2><p class="muted">Elige un servicio para cambiar su foto, descripción y categoría. Publica primero las categorías nuevas.</p><label>Servicio para personalizar<select [(ngModel)]="selectedService" (ngModelChange)="chooseService()" [disabled]="busy()"><option value="">Selecciona un servicio</option>@for (s of services;track s.id) {<option [value]="s.id">{{s.name}}{{s.active?'':' · inactivo'}}</option>}</select></label>
+          @if (serviceDraft) {
+            <form class="stack" (ngSubmit)="saveService()"><fieldset [disabled]="busy()"><legend>{{serviceDraft.name}}</legend><div class="photo-fields"><div class="stack"><label>Descripción pública del servicio<textarea name="service_description" [(ngModel)]="serviceDraft.description" maxlength="500" rows="4"></textarea></label><label>Categoría del servicio<select name="service_category" [(ngModel)]="serviceDraft.category">@for (c of categories;track c.id) {<option [value]="c.id">{{c.name}}</option>}</select></label></div><div class="photo-field">@if (serviceDraft.photo_asset_id) {<img [src]="photo(serviceDraft.photo_asset_id)" alt="Vista previa del servicio" />}<label>Subir foto del servicio<input type="file" accept="image/jpeg,image/png,image/webp" (change)="upload($event,'service')" [disabled]="!rights || busy()" /></label><label>Foto del servicio en biblioteca<select name="service_photo" [ngModel]="serviceDraft.photo_asset_id || ''" (ngModelChange)="serviceDraft.photo_asset_id=$event || null"><option value="">Usar la imagen de su categoría</option>@for (a of assets;track a.id;let i=$index) {<option [value]="a.id">Foto {{i+1}} · {{a.id.slice(0,8)}}</option>}</select></label></div></div></fieldset><button class="button primary" [disabled]="busy()">{{busy()?'Guardando…':'Guardar servicio'}}<lv-icon name="check" /></button></form>
+          }
+        </section>
+      }
+      @if (tab()==='library') {
+        <section><h2>Tu biblioteca de fotos.</h2><p class="muted">Hasta 200 fotos y 100 MB por salón. Retira una foto de sus usos y guarda antes de borrarla. Los respaldos conservan su propia retención.</p><div class="media-library">@for (a of assets;track a.id;let i=$index) {<article><img [src]="photo(a.id)" [alt]="'Foto '+(i+1)+' de la biblioteca'" loading="lazy" /><div><strong>Foto {{i+1}} · {{a.id.slice(0,8)}}</strong><p class="quiet">{{a.used?'En uso publicado':'Sin uso publicado'}}</p><button class="button" [disabled]="busy() || a.used" (click)="deletePhoto(a.id)">Eliminar foto</button></div></article>} @empty {<div class="empty"><h3>Tu biblioteca está lista.</h3><p>Sube la primera foto desde Portada, Categorías o Fotos de servicios.</p></div>}</div></section>
+      }
+    }
+  </section>
+}

@@ -1,0 +1,5 @@
+{
+  "name": "data-access",
+  "tags": ["type:lib", "scope:shared"],
+  "targets": {}
+}

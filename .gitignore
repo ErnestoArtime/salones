@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.nx/
+.env
+.env.*
+!.env.example
+backups/
+playwright-report/
+test-results/
+*.log
+apps/salon-app/android/
+apps/salon-app/ios/
+.local/
+.angular/

@@ -1,0 +1,410 @@
+@if (error()) {
+  <p class="error" role="alert">{{ error() }}</p>
+}
+@if (notice()) {
+  <p class="status-message" role="status">{{ notice() }}</p>
+}
+@if (state(); as s) {
+  <div class="toolbar">
+    <div class="segmented">
+      <button [class.active]="tab() === 'try'" (click)="tab.set('try')">
+        Probar un estilo</button
+      ><button
+        [class.active]="tab() === 'catalog'"
+        (click)="tab.set('catalog')"
+      >
+        Catálogo</button
+      ><button
+        [class.active]="tab() === 'history'"
+        (click)="tab.set('history')"
+      >
+        Historial
+      </button>
+    </div>
+    <p class="quiet">{{ s.usage }} / {{ s.limit }} simulaciones este mes</p>
+  </div>
+  @if (!s.provider_ready) {
+    <div class="studio-provider-note">
+      <h3>Preparado para conectar la IA.</h3>
+      <p>
+        La API externa aún no tiene clave. Ya puedes preparar los trabajos del
+        salón y subir fotos privadas; la generación se activará cuando
+        configuremos el proveedor.
+      </p>
+    </div>
+  }
+  @if (tab() === "catalog") {
+    <div class="studio-layout">
+      <section>
+        <h2>Trabajos con firma propia.</h2>
+        <p class="muted" style="margin-block: 16px">
+          Cortes, colores y acabados realizados por tu equipo. Gerencia decide
+          cuáles se pueden probar.
+        </p>
+        <div class="style-grid">
+          @for (style of s.styles; track style.id) {
+            <article class="style-work">
+              <img
+                [src]="image(style.reference_asset_id)"
+                [alt]="style.name"
+                width="480"
+                height="560"
+                loading="lazy"
+              />
+              <div class="row spread">
+                <h3>{{ style.name }}</h3>
+                <span class="quiet">{{
+                  style.published ? "Publicado" : "Borrador"
+                }}</span>
+              </div>
+              <p class="quiet">
+                {{ style.service_name }}
+                @if (style.employee_name) {
+                  · {{ style.employee_name }}
+                }
+              </p>
+              <p class="muted">{{ style.description }}</p>
+              @if (manage()) {
+                <button
+                  class="text-button"
+                  [disabled]="busy()"
+                  (click)="publish(style)"
+                >
+                  {{
+                    style.published
+                      ? "Retirar del probador"
+                      : "Publicar en probador"
+                  }}<lv-icon name="arrow" />
+                </button>
+              }
+            </article>
+          } @empty {
+            <div class="empty">
+              <h3>Tu mejor trabajo, el primero.</h3>
+              <p>
+                Añade una fotografía de un resultado real y explica qué lo
+                caracteriza.
+              </p>
+            </div>
+          }
+        </div>
+      </section>
+      @if (canCurate()) {
+        <section class="studio-editor">
+          <h2>Añadir un trabajo.</h2>
+          <form class="stack" (ngSubmit)="saveStyle()">
+            <label
+              >Nombre del estilo<input
+                name="styleName"
+                [(ngModel)]="draft.name"
+                maxlength="100"
+                required /></label
+            ><label
+              >Servicio relacionado<select
+                name="service"
+                [(ngModel)]="draft.service_id"
+                required
+              >
+                <option value="">Elige servicio</option>
+                @for (service of workspace().services; track service.id) {
+                  <option [value]="service.id">{{ service.name }}</option>
+                }
+              </select></label
+            ><label
+              >Profesional<select
+                name="employee"
+                [(ngModel)]="draft.employee_id"
+              >
+                <option value="">Sin atribución</option>
+                @for (e of workspace().employees; track e.id) {
+                  <option [value]="e.id">{{ e.name }}</option>
+                }
+              </select></label
+            ><label
+              >Tipo de trabajo<select
+                name="category"
+                [(ngModel)]="draft.category"
+              >
+                <option value="cut">Corte</option>
+                <option value="color">Color</option>
+                <option value="finish">Acabado</option>
+              </select></label
+            ><label
+              >Descripción<textarea
+                name="description"
+                [(ngModel)]="draft.description"
+                maxlength="500"
+              ></textarea></label
+            ><label
+              >Indicaciones para la simulación<textarea
+                name="instructions"
+                [(ngModel)]="draft.instructions"
+                minlength="10"
+                maxlength="1500"
+                required
+                placeholder="Describe longitud, forma, textura y color del cabello."
+              ></textarea></label
+            ><label class="check-label"
+              ><input
+                type="checkbox"
+                name="rights"
+                [(ngModel)]="referenceConsent"
+              />Tengo permiso para utilizar esta fotografía como referencia de
+              estilo.</label
+            ><label
+              >Fotografía del trabajo<input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                [disabled]="!referenceConsent || busy()"
+                (change)="upload($event, 'reference')"
+            /></label>
+            @if (draft.reference_asset_id) {
+              <p class="success">Fotografía preparada.</p>
+            }
+            @if (manage()) {
+              <label class="check-label"
+                ><input
+                  type="checkbox"
+                  name="published"
+                  [(ngModel)]="draft.published"
+                />Publicar en el probador del salón</label
+              >
+            }
+            <button
+              class="button primary"
+              [disabled]="busy() || !draft.reference_asset_id"
+            >
+              {{ busy() ? "Guardando…" : "Añadir al catálogo" }}
+            </button>
+          </form>
+        </section>
+      }
+    </div>
+  } @else if (tab() === "history") {
+    <h2>Ideas que habéis probado.</h2>
+    <p class="muted" style="margin-block: 16px">
+      Las fotos y resultados caducan a las 72 horas. Borrar una foto elimina las
+      pruebas que la utilizan del historial activo.
+    </p>
+    <div class="catalog-list">
+      @for (job of s.jobs; track job.id) {
+        <article class="catalog-row">
+          <div>
+            <h3>{{ job.name }}</h3>
+            <p class="quiet">
+              {{ job.created_at.slice(0, 10) }} · {{ statusLabel(job.status) }}
+              @if (job.appointment_id) {
+                · Vinculada a cita
+              }
+            </p>
+          </div>
+          <div class="row">
+            <button class="button" (click)="selectJob(job)">Ver prueba</button
+            ><button
+              class="icon-button"
+              [disabled]="busy() || job.status === 'running'"
+              aria-label="Borrar fotos de esta prueba"
+              (click)="remove(job)"
+            >
+              <lv-icon name="close" />
+            </button>
+          </div>
+        </article>
+      } @empty {
+        <div class="empty">
+          <h3>Cada cambio empieza con una idea.</h3>
+          <p>Todavía no hay pruebas virtuales en este salón.</p>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="studio-layout">
+      <section>
+        <h2>¿Y si lo viéramos antes?</h2>
+        <p class="muted" style="margin-block: 16px">
+          Una simulación para conversar sobre el próximo look. Tu profesional
+          valida lo que se puede conseguir.
+        </p>
+        @if (selected(); as job) {
+          <div class="studio-result">
+            <div class="row spread">
+              <h3>{{ job.name }}</h3>
+              <span class="badge">{{ statusLabel(job.status) }}</span>
+            </div>
+            @if (job.status === "succeeded" && job.result_asset_id) {
+              <div class="before-after">
+                <img
+                  [src]="image(job.portrait_asset_id)"
+                  alt="Fotografía original del cliente"
+                  width="600"
+                  height="800"
+                /><img
+                  class="after-image"
+                  [src]="image(job.result_asset_id)"
+                  alt="Simulación orientativa generada por IA"
+                  width="600"
+                  height="800"
+                  [style.clip-path]="'inset(0 ' + (100 - compare) + '% 0 0)'"
+                />
+                <div class="comparison-labels">
+                  <span>Simulación IA</span><span>Original</span>
+                </div>
+              </div>
+              <label
+                >Comparar antes y después<input
+                  type="range"
+                  min="0"
+                  max="100"
+                  [(ngModel)]="compare"
+              /></label>
+              <p class="quiet">
+                La simulación puede cambiar rasgos o interpretar el estilo de
+                forma imprecisa. No garantiza el resultado del servicio.
+              </p>
+              <div class="row">
+                @if (canBook() && !job.appointment_id) {
+                  <button class="button primary" (click)="book.emit(job)">
+                    Preparar cita<lv-icon name="calendar" />
+                  </button>
+                }
+                @if (job.appointment_id) {
+                  <p class="success">Vinculada a una cita.</p>
+                }
+                <a
+                  class="button"
+                  [href]="image(job.result_asset_id)"
+                  target="_blank"
+                  rel="noopener"
+                  >Abrir resultado<lv-icon name="arrow"
+                /></a>
+              </div>
+            } @else if (job.status === "failed") {
+              <p class="error">{{ job.error }}</p>
+            } @else {
+              <div class="empty">
+                <lv-icon name="clock" />
+                <h3>La idea está en proceso.</h3>
+                <p>El estado se actualizará automáticamente.</p>
+              </div>
+            }
+            <button
+              class="text-button"
+              [disabled]="busy() || job.status === 'running'"
+              (click)="remove(job)"
+            >
+              Borrar fotos y pruebas asociadas
+            </button>
+          </div>
+        }
+        <div class="style-grid">
+          @for (style of published(); track style.id) {
+            <button
+              class="style-choice"
+              [class.selected]="styleId() === style.id"
+              [attr.aria-pressed]="styleId() === style.id"
+              (click)="styleId.set(style.id)"
+            >
+              <img
+                [src]="image(style.reference_asset_id)"
+                [alt]="style.name"
+                width="480"
+                height="560"
+                loading="lazy"
+              /><span>{{ style.name }}</span
+              ><small>{{ style.service_name }}</small>
+            </button>
+          } @empty {
+            <div class="empty">
+              <h3>Primero, vuestro catálogo.</h3>
+              <p>Publica al menos un trabajo del equipo para poder probarlo.</p>
+              <button class="button" (click)="tab.set('catalog')">
+                Preparar catálogo
+              </button>
+            </div>
+          }
+        </div>
+      </section>
+      <section class="studio-editor">
+        <h2>El rostro del cliente.</h2>
+        <div class="stack" style="margin-top: 24px">
+          <label class="check-label"
+            ><input type="checkbox" [(ngModel)]="photoConsent" />El cliente
+            autoriza capturar y guardar su foto para esta prueba.</label
+          ><label
+            >Subir foto o usar cámara<input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              capture="user"
+              [disabled]="!photoConsent || busy()"
+              (change)="upload($event, 'portrait')"
+          /></label>
+          <p class="field-help">
+            JPEG, PNG o WebP · hasta 5 MB. Se eliminan los metadatos y las fotos
+            caducan en 72 horas.
+          </p>
+          @if (portraitId()) {
+            <img
+              class="portrait-preview"
+              [src]="image(portraitId())"
+              alt="Foto privada preparada para la prueba"
+              width="300"
+              height="400"
+            /><button
+              class="text-button"
+              [disabled]="busy()"
+              (click)="removePortrait()"
+            >
+              Retirar fotografía
+            </button>
+          }
+          @if (workspace().customers.length) {
+            <label
+              >Vincular a cliente · opcional<select [(ngModel)]="customerId">
+                <option value="">Sin vincular</option>
+                @for (c of workspace().customers; track c.id) {
+                  <option [value]="c.id">{{ c.name }}</option>
+                }
+              </select></label
+            >
+          }
+          <label class="check-label"
+            ><input type="checkbox" [(ngModel)]="externalConsent" />El cliente
+            autoriza enviar su foto y la referencia del peinado a Replicate para
+            generar esta simulación.</label
+          >
+          <p class="quiet">
+            Lavía no utiliza estas fotos para entrenar modelos. La retención del
+            proveedor debe revisarse antes de activar la API. Las copias de
+            seguridad pueden conservar fotos hasta su rotación.
+          </p>
+          <button
+            class="button primary"
+            [disabled]="
+              busy() ||
+              !portraitId() ||
+              !styleId() ||
+              !externalConsent ||
+              !s.provider_ready ||
+              s.usage >= s.limit
+            "
+            (click)="generate()"
+          >
+            {{ busy() ? "Preparando…" : "Generar simulación"
+            }}<lv-icon name="arrow" />
+          </button>
+          <p class="field-help">
+            {{
+              !s.provider_ready
+                ? "Pendiente de configurar la API externa."
+                : s.usage >= s.limit
+                  ? "Cuota mensual agotada."
+                  : "Cada solicitud reserva una unidad de la cuota. Los fallos pueden tener coste en el proveedor."
+            }}
+          </p>
+        </div>
+      </section>
+    </div>
+  }
+} @else {
+  <p role="status">Preparando el estudio…</p>
+}

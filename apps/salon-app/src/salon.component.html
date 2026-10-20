@@ -1,0 +1,1182 @@
+@if (loading()) {
+  <div class="boot">
+    <span class="wordmark">lavía</span>
+    <p>Preparando tu espacio…</p>
+  </div>
+} @else if (!user()) {
+  <lv-auth (authenticated)="init()" />
+} @else if (!tenants().length) {
+  <main class="onboarding">
+    <span class="wordmark">lavía</span>
+    <p class="quiet" style="margin-top: 32px">Un lugar para tu negocio</p>
+    <h1>Hagamos sitio<br />a tu salón.</h1>
+    <p class="muted">
+      Empieza con tu primera sede. Después podrás configurar servicios, equipo y
+      horarios.
+    </p>
+    <form #onboardForm class="stack" (ngSubmit)="onboard(onboardForm)">
+      <label
+        >Nombre del salón<input name="name" required maxlength="140" /></label
+      ><label
+        >Dirección de reservas<input
+          name="slug"
+          required
+          pattern="[a-z0-9][a-z0-9-]{2,59}"
+          placeholder="mi-salon"
+      /></label>
+      <p class="field-help">
+        Solo minúsculas, números y guiones. Mínimo 3 caracteres.
+      </p>
+      <label
+        >Nombre de la sede<input
+          name="branch_name"
+          required
+          value="Sede principal" /></label
+      ><label>Dirección<input name="address" maxlength="300" /></label
+      ><label
+        >Zona horaria<select name="timezone">
+          <option>Europe/Madrid</option>
+          <option>Atlantic/Canary</option>
+          <option>America/Havana</option>
+          <option>America/Mexico_City</option>
+          <option>America/Bogota</option>
+          <option>America/Argentina/Buenos_Aires</option>
+        </select></label
+      >
+      @if (error()) {
+        <p role="alert" class="error">{{ error() }}</p>
+      }
+      <button class="button primary" [disabled]="working()">
+        {{ working() ? "Preparando…" : "Crear mi salón"
+        }}<lv-icon name="arrow" /></button
+      ><button class="text-button" type="button" (click)="logout()">
+        Cerrar sesión
+      </button>
+    </form>
+  </main>
+} @else {
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="sidebar-head">
+        <a class="wordmark" href="/" aria-label="Lavía, inicio">lavía</a
+        ><span class="quiet">Salones</span>
+      </div>
+      <nav aria-label="Gestión del salón">
+        @for (item of nav; track item.key) {
+          <button
+            class="nav-link"
+            [class.active]="page() === item.key"
+            [attr.aria-current]="page() === item.key ? 'page' : null"
+            (click)="navigate(item.key)"
+            [attr.aria-label]="item.label"
+          >
+            <lv-icon [name]="item.icon" /><span>{{ item.label }}</span>
+          </button>
+        }
+      </nav>
+      <div class="sidebar-bottom">
+        <p class="quiet">El espacio detrás<br />de cada buen día.</p>
+        <a
+          class="text-button"
+          [href]="bookingUrl()"
+          target="_blank"
+          rel="noopener"
+          >Ver reservas<lv-icon name="arrow" /></a
+        ><button class="text-button" (click)="logout()">
+          <lv-icon name="logout" />Cerrar sesión
+        </button>
+      </div>
+    </aside>
+    <main class="workspace">
+      <header class="topbar">
+        <label aria-label="Salón activo"
+          ><select [(ngModel)]="tenantId" (ngModelChange)="changeTenant()">
+            @for (t of tenants(); track t.id) {
+              <option [value]="t.id">{{ t.name }}</option>
+            }
+          </select></label
+        >
+        <div class="topbar-right">
+          <span class="quiet">{{
+            data()?.tenant?.role === "owner"
+              ? "Propietario"
+              : data()?.tenant?.role
+          }}</span
+          ><span class="avatar" aria-hidden="true">{{
+            user()?.email?.slice(0, 2)?.toUpperCase()
+          }}</span
+          ><button
+            class="icon-button mobile-logout"
+            aria-label="Cerrar sesión"
+            (click)="logout()"
+          >
+            <lv-icon name="logout" />
+          </button>
+        </div>
+      </header>
+      @if (error() && !kind()) {
+        <p class="error" role="alert">
+          {{ error() }}
+          <button class="text-button" (click)="load()">Reintentar</button>
+        </p>
+      }
+      @if (notice()) {
+        <p class="status-message" role="status">{{ notice() }}</p>
+      }
+      @if (data(); as w) {
+        <div class="page-heading">
+          <div>
+            <p class="quiet">
+              {{ page() === "agenda" ? dayTitle() : w.tenant.name }}
+            </p>
+            <h1>
+              {{ page() === "agenda" ? "Cada cita, a su tiempo." : title() }}
+            </h1>
+          </div>
+          @if (page() === "agenda" && canBook()) {
+            <button class="button primary" (click)="open('appointment')">
+              <lv-icon name="plus" />Nueva cita
+            </button>
+          }
+          @if (page() === "services" && canManage()) {
+            <button class="button primary" (click)="open('service')">
+              <lv-icon name="plus" />Nuevo servicio
+            </button>
+          }
+          @if (page() === "customers" && canBook()) {
+            <button class="button primary" (click)="open('customer')">
+              <lv-icon name="plus" />Nuevo cliente
+            </button>
+          }
+          @if (page() === "employees" && canManage()) {
+            <button class="button primary" (click)="open('employee')">
+              <lv-icon name="plus" />Añadir profesional
+            </button>
+          }
+        </div>
+        @switch (page()) {
+          @case ("site") {
+            <lv-page-editor [tenantId]="tenantId" [role]="w.tenant.role" [publicUrl]="bookingUrl()" (saved)="load()" />
+          }
+          @case ("studio") {
+            <lv-studio
+              [tenantId]="tenantId"
+              [workspace]="w"
+              (book)="bookStyle($event)"
+            />
+          }
+          @case ("agenda") {
+            <section class="stats-strip" aria-label="Resumen del día">
+              <div class="stat">
+                <strong>{{ appointments().length }}</strong
+                ><small>Citas en agenda</small>
+              </div>
+              <div class="stat">
+                <strong>{{ confirmed() }}</strong
+                ><small>Por atender</small>
+              </div>
+              <div class="stat">
+                <strong>{{ revenue() }}</strong
+                ><small>Valor de servicios completados</small>
+              </div>
+              <div class="stat">
+                <strong>{{ professionalColumns().length }}</strong
+                ><small>Profesionales</small>
+              </div>
+            </section>
+            <div class="toolbar">
+              @if (w.branches.length > 1) {
+                <label
+                  >Sede<select
+                    [ngModel]="branchFilter()"
+                    (ngModelChange)="branchFilter.set($event)"
+                  >
+                    @for (b of w.branches; track b.id) {
+                      <option [value]="b.id">{{ b.name }}</option>
+                    }
+                  </select></label
+                >
+              }
+              <div class="date-switch">
+                <button
+                  class="icon-button"
+                  aria-label="Día anterior"
+                  (click)="shiftDay(-1)"
+                >
+                  <span aria-hidden="true">←</span></button
+                ><label aria-label="Fecha de la agenda"
+                  ><input
+                    type="date"
+                    [ngModel]="date()"
+                    (ngModelChange)="date.set($event); load()" /></label
+                ><button
+                  class="icon-button"
+                  aria-label="Día siguiente"
+                  (click)="shiftDay(1)"
+                >
+                  <span aria-hidden="true">→</span></button
+                ><button class="button" (click)="today()">Hoy</button>
+              </div>
+              <div class="row">
+                <label aria-label="Filtrar profesional"
+                  ><select
+                    [ngModel]="employeeFilter()"
+                    (ngModelChange)="employeeFilter.set($event)"
+                  >
+                    <option value="">Todo el equipo</option>
+                    @for (e of w.employees; track e.id) {
+                      <option [value]="e.id">{{ e.name }}</option>
+                    }
+                  </select></label
+                >
+                <div class="segmented">
+                  <button
+                    [class.active]="layout() === 'calendar'"
+                    (click)="setLayout('calendar')"
+                  >
+                    Agenda</button
+                  ><button
+                    [class.active]="layout() === 'list'"
+                    (click)="setLayout('list')"
+                  >
+                    Lista</button
+                  ><button
+                    [class.active]="layout() === 'week'"
+                    (click)="setLayout('week')"
+                  >
+                    Semana
+                  </button>
+                </div>
+              </div>
+            </div>
+            @if (!w.employees.length) {
+              <section class="empty">
+                <lv-icon name="people" />
+                <h3>El día empieza con tu equipo.</h3>
+                <p>
+                  Añade un profesional, asígnale servicios y prepara sus
+                  horarios.
+                </p>
+                @if (canManage()) {
+                  <button class="button" (click)="navigate('employees')">
+                    Configurar equipo<lv-icon name="arrow" />
+                  </button>
+                }
+              </section>
+            }
+            @if (layout() === "calendar" && professionalColumns().length) {
+              <section
+                class="agenda-grid calendar"
+                aria-label="Calendario de citas"
+              >
+                <div
+                  class="calendar-head"
+                  [style.grid-template-columns]="calendarColumns()"
+                >
+                  <div></div>
+                  @for (e of professionalColumns(); track e.id) {
+                    <div>
+                      <span class="avatar">{{ e.name.slice(0, 1) }}</span
+                      ><strong>{{ e.name }}</strong>
+                    </div>
+                  }
+                </div>
+                <div
+                  class="calendar-body"
+                  [style.grid-template-columns]="calendarColumns()"
+                  [style.height.px]="calendarHours().length * 72"
+                >
+                  <div class="time-column">
+                    @for (h of calendarHours(); track h) {
+                      <span [style.top.px]="(h - calendarStart()) * 72"
+                        >{{ h.toString().padStart(2, "0") }}:00</span
+                      >
+                    }
+                  </div>
+                  @for (e of professionalColumns(); track e.id) {
+                    <div class="employee-column">
+                      @for (a of forEmployee(e.id); track a.id) {
+                        <button
+                          [class]="
+                            'calendar-appointment ' + e.color + ' ' + a.status
+                          "
+                          [style.top.px]="top(a)"
+                          [style.height.px]="height(a)"
+                          (click)="detail(a)"
+                          [attr.aria-label]="
+                            hour(a.starts_at, zone()) +
+                            ' ' +
+                            a.customer_name +
+                            ', ' +
+                            a.service_name +
+                            ', ' +
+                            statusLabel(a.status)
+                          "
+                        >
+                          <small
+                            >{{ hour(a.starts_at, zone()) }} —
+                            {{ hour(a.ends_at, zone()) }}</small
+                          ><strong>{{ a.customer_name }}</strong
+                          ><small>{{ a.service_name }}</small>
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+              </section>
+            }
+            @if (layout() === "week") {
+              <section class="week-agenda">
+                @for (day of weekDays(); track day.date) {
+                  <div class="week-day">
+                    <h3>{{ day.label }}</h3>
+                    @for (a of weekDayAppointments(day.date); track a.id) {
+                      <button class="week-item" (click)="detail(a)">
+                        <small
+                          >{{ hour(a.starts_at, zone()) }} ·
+                          {{ a.employee_name }}</small
+                        ><strong>{{ a.customer_name }}</strong
+                        ><span>{{ a.service_name }}</span>
+                      </button>
+                    } @empty {
+                      <p class="quiet">Sin citas</p>
+                    }
+                  </div>
+                }
+              </section>
+            }
+            <section
+              class="agenda-list"
+              [class.week-hidden]="layout() === 'week'"
+              [class.desktop-hidden]="
+                layout() === 'calendar' && professionalColumns().length > 0
+              "
+              aria-label="Lista de citas"
+            >
+              @for (a of appointments(); track a.id) {
+                <button class="appointment-row" (click)="detail(a)">
+                  <span class="time">{{ hour(a.starts_at, zone()) }}</span>
+                  <div>
+                    <strong>{{ a.customer_name }}</strong>
+                    <div class="row">
+                      <span>{{ a.service_name }}</span
+                      ><span class="quiet">con {{ a.employee_name }}</span>
+                    </div>
+                    <span [class]="'badge ' + a.status">{{
+                      statusLabel(a.status)
+                    }}</span>
+                  </div>
+                </button>
+              } @empty {
+                <div class="empty">
+                  <h3>Un espacio por llenar.</h3>
+                  <p>
+                    No hay citas para este día. Puedes crear una o compartir tu
+                    enlace de reservas.
+                  </p>
+                  @if (canBook()) {
+                    <button class="button" (click)="open('appointment')">
+                      Crear cita
+                    </button>
+                  }
+                </div>
+              }
+            </section>
+          }
+          @case ("services") {
+            <p class="muted" style="margin-bottom: 24px">
+              Tu carta de servicios. Duración, precio y tiempo entre citas.
+            </p>
+            <section class="catalog-list">
+              @for (s of w.services; track s.id; let i = $index) {
+                <article class="catalog-row">
+                  <div class="row">
+                    <span class="service-index">{{
+                      (i + 1).toString().padStart(2, "0")
+                    }}</span>
+                    <div>
+                      <h3>{{ s.name }}</h3>
+                      <p class="quiet">
+                        {{ s.duration_minutes }} min
+                        @if (s.buffer_minutes) {
+                          · {{ s.buffer_minutes }} min de preparación
+                        }
+                        @if (!s.active) {
+                          · Inactivo
+                        }
+                      </p>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <strong>{{ money(s.price_cents, s.currency) }}</strong>
+                    @if (canManage()) {
+                      <button
+                        class="icon-button"
+                        [attr.aria-label]="'Editar ' + s.name"
+                        (click)="open('service', s)"
+                      >
+                        <lv-icon name="arrow" />
+                      </button>
+                    }
+                  </div>
+                </article>
+              } @empty {
+                <div class="empty">
+                  <h3>¿Qué ofrece tu salón?</h3>
+                  <p>Prepara el catálogo para empezar a reservar.</p>
+                </div>
+              }
+            </section>
+          }
+          @case ("customers") {
+            @if (canBook()) {
+              <div class="toolbar">
+                <label class="search-field"
+                  ><span class="sr-only">Buscar clientes</span
+                  ><lv-icon name="search" /><input
+                    type="search"
+                    placeholder="Nombre, correo o teléfono"
+                    [ngModel]="search()"
+                    (ngModelChange)="search.set($event)" /></label
+                ><span class="quiet"
+                  >{{ filteredCustomers().length }} clientes</span
+                >
+              </div>
+              <section class="catalog-list">
+                @for (c of filteredCustomers(); track c.id) {
+                  <article class="catalog-row">
+                    <div class="row">
+                      <span class="avatar">{{
+                        c.name.slice(0, 2).toUpperCase()
+                      }}</span>
+                      <div>
+                        <h3>{{ c.name }}</h3>
+                        <p class="quiet">
+                          {{ c.phone || c.email || "Sin datos de contacto" }}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      class="icon-button"
+                      [attr.aria-label]="'Ver ficha de ' + c.name"
+                      (click)="open('customer', c)"
+                    >
+                      <lv-icon name="arrow" />
+                    </button>
+                  </article>
+                } @empty {
+                  <div class="empty">
+                    <h3>Conoce a quien vuelve.</h3>
+                    <p>
+                      {{
+                        search()
+                          ? "No hay coincidencias. Prueba con otro nombre."
+                          : "Las fichas de tus clientes aparecerán aquí."
+                      }}
+                    </p>
+                  </div>
+                }
+              </section>
+            } @else {
+              <p class="read-only">
+                Tu rol permite consultar las citas de tu agenda. Las fichas de
+                clientes las gestiona recepción.
+              </p>
+            }
+          }
+          @case ("employees") {
+            <p class="muted" style="margin-bottom: 24px">
+              Personas, especialidades y horarios. Cada profesional tiene su
+              propio ritmo.
+            </p>
+            <section class="catalog-list">
+              @for (e of w.employees; track e.id) {
+                <article class="catalog-row">
+                  <div class="row">
+                    <span class="avatar">{{ e.name.slice(0, 1) }}</span>
+                    <div>
+                      <h3>{{ e.name }}</h3>
+                      <p class="quiet">
+                        {{ e.service_ids.length }} servicios ·
+                        {{ e.active ? "Activo" : "Inactivo" }}
+                      </p>
+                    </div>
+                  </div>
+                  @if (canManage()) {
+                    <div class="row employee-actions">
+                      <button class="button" (click)="open('schedule', e)">
+                        Horarios</button
+                      ><button
+                        class="icon-button"
+                        [attr.aria-label]="'Bloquear horario de ' + e.name"
+                        (click)="open('absence', e)"
+                      >
+                        <lv-icon name="clock" /></button
+                      ><button
+                        class="icon-button"
+                        [attr.aria-label]="'Editar ' + e.name"
+                        (click)="open('employee', e)"
+                      >
+                        <lv-icon name="arrow" />
+                      </button>
+                    </div>
+                  }
+                </article>
+              } @empty {
+                <div class="empty">
+                  <h3>Un oficio compartido.</h3>
+                  <p>Añade a las personas que atienden en tu salón.</p>
+                </div>
+              }
+            </section>
+            @if (w.absences.length && canManage()) {
+              <h2 style="margin-top: 32px">Tiempo reservado</h2>
+              @for (a of w.absences; track a.id) {
+                <div class="catalog-row">
+                  <div>
+                    <h3>{{ a.reason || "Bloqueo de agenda" }}</h3>
+                    <p class="quiet">
+                      {{ a.starts_at.slice(0, 10) }} ·
+                      {{ hour(a.starts_at, zone()) }} —
+                      {{ hour(a.ends_at, zone()) }}
+                    </p>
+                  </div>
+                  <button
+                    class="icon-button"
+                    aria-label="Eliminar bloqueo"
+                    (click)="removeAbsence(a.id)"
+                  >
+                    <lv-icon name="close" />
+                  </button>
+                </div>
+              }
+            }
+          }
+          @case ("settings") {
+            <section class="settings-panel stack">
+              <div>
+                <h2>Tu escaparate de reservas.</h2>
+                <p class="muted" style="margin-block: 16px">
+                  Comparte este enlace en WhatsApp, Instagram o tu web. Tus
+                  clientes podrán reservar sin instalar nada.
+                </p>
+                <div class="row">
+                  <a
+                    class="button"
+                    [href]="bookingUrl()"
+                    target="_blank"
+                    rel="noopener"
+                    >Abrir portal<lv-icon name="arrow" /></a
+                  ><button class="button" (click)="copyLink()">
+                    <lv-icon name="link" />Copiar enlace
+                  </button>
+                </div>
+              </div>
+              <hr class="divider" />
+              <form
+                #settingsForm
+                class="stack"
+                (ngSubmit)="saveSettings(settingsForm)"
+              >
+                <label
+                  >Nombre del salón<input
+                    name="name"
+                    [ngModel]="w.tenant.name"
+                    required
+                    maxlength="140"
+                    [disabled]="w.tenant.role !== 'owner'" /></label
+                ><label class="check-label"
+                  ><input
+                    type="checkbox"
+                    name="booking_enabled"
+                    [ngModel]="w.tenant.booking_enabled"
+                    [disabled]="w.tenant.role !== 'owner'"
+                  />Aceptar reservas públicas</label
+                >
+                @if (w.tenant.role === "owner") {
+                  <button class="button primary" [disabled]="working()">
+                    Guardar cambios
+                  </button>
+                }
+              </form>
+              <hr class="divider" />
+              <h3>
+                Plan
+                {{ w.tenant.plan === "trial" ? "de prueba" : w.tenant.plan }}
+              </h3>
+              <p class="muted">
+                {{
+                  w.tenant.plan === "trial"
+                    ? "Hasta 3 profesionales"
+                    : w.tenant.plan === "essential"
+                      ? "Hasta 10 profesionales"
+                      : "Hasta 30 profesionales"
+                }}. La activación de planes se gestiona con administración.
+              </p>
+              <h3>Sedes</h3>
+              @if (w.tenant.role === "owner") {
+                <div class="row">
+                  <button class="button" (click)="open('branch')">
+                    Añadir sede</button
+                  ><button class="button" (click)="open('tenant')">
+                    Crear otro salón
+                  </button>
+                </div>
+              }
+              @for (b of w.branches; track b.id) {
+                <p>
+                  {{ b.name }}<br /><small
+                    >{{ b.address || "Dirección pendiente" }} ·
+                    {{ b.timezone }}</small
+                  >
+                </p>
+              }
+              @if (w.tenant.role === "owner") {
+                <hr class="divider" />
+                <div class="row spread">
+                  <h2>Accesos del equipo</h2>
+                  <button class="button" (click)="open('member')">
+                    Dar acceso
+                  </button>
+                </div>
+                <p class="muted">
+                  Recepción gestiona clientes y citas; gerencia configura
+                  servicios y equipo; los profesionales ven su propia agenda.
+                </p>
+                @for (m of members(); track m.user_id) {
+                  <div class="catalog-row">
+                    <div>
+                      <h3>{{ m.email || user()?.email }}</h3>
+                      <p class="quiet">
+                        {{ m.role }}
+                        @if (m.employee_name) {
+                          · {{ m.employee_name }}
+                        }
+                      </p>
+                    </div>
+                    @if (m.role !== "owner") {
+                      <button
+                        class="icon-button"
+                        [disabled]="working()"
+                        aria-label="Retirar acceso"
+                        (click)="removeMember(m.user_id)"
+                      >
+                        <lv-icon name="close" />
+                      </button>
+                    }
+                  </div>
+                }
+              }
+            </section>
+          }
+        }
+        <footer class="page-foot">
+          <span>Lavía · Espacio para hacerlo bien.</span
+          ><span>{{ w.branches[0]?.timezone }}</span>
+        </footer>
+      } @else {
+        <div class="boot">Cargando el salón…</div>
+      }
+    </main>
+  </div>
+}
+<dialog
+  #editor
+  class="sheet"
+  (click)="backdrop($event)"
+  (cancel)="kind.set(''); error.set('')"
+  aria-labelledby="editor-title"
+>
+  <div class="sheet-head">
+    <h2 id="editor-title">
+      {{
+        kind() === "detail"
+          ? "Tu cita"
+          : kind() === "appointment"
+            ? "Una nueva cita."
+            : kind() === "service"
+              ? "Servicio"
+              : kind() === "customer"
+                ? "Ficha de cliente"
+                : kind() === "employee"
+                  ? "Profesional"
+                  : kind() === "schedule"
+                    ? "Horarios"
+                    : kind() === "member"
+                      ? "Dar acceso"
+                      : kind() === "tenant"
+                        ? "Un nuevo salón"
+                        : kind() === "branch"
+                          ? "Nueva sede"
+                          : "Bloquear agenda"
+      }}
+    </h2>
+    <button class="icon-button" (click)="close()" aria-label="Cerrar">
+      <lv-icon name="close" />
+    </button>
+  </div>
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+  }
+  @if (kind() === "detail") {
+    @if (selected(); as a) {
+      <div class="details">
+        <div>
+          <span class="detail-label">Cliente</span>
+          <h2>{{ a.customer_name }}</h2>
+        </div>
+        <div>
+          <span class="detail-label">Servicio</span>
+          <p>{{ a.service_name }} · {{ money(a.price_cents, a.currency) }}</p>
+        </div>
+        <div>
+          <span class="detail-label">Horario · {{ zone() }}</span>
+          <p>
+            {{ hour(a.starts_at, zone()) }} — {{ hour(a.ends_at, zone()) }} ·
+            {{ a.employee_name }}
+          </p>
+        </div>
+        <span [class]="'badge ' + a.status">{{ statusLabel(a.status) }}</span>
+        @if (a.notes) {
+          <p>{{ a.notes }}</p>
+        }
+        @if (a.status === "confirmed") {
+          <div class="row">
+            @if (canBook()) {
+              <button class="button" (click)="reschedule()">
+                Cambiar cita
+              </button>
+            }
+            <button
+              class="button primary"
+              [disabled]="working()"
+              (click)="changeStatus('completed')"
+            >
+              Completar</button
+            ><button
+              class="button"
+              [disabled]="working()"
+              (click)="changeStatus('no_show')"
+            >
+              No asistió</button
+            ><button
+              class="text-button"
+              [disabled]="working()"
+              (click)="changeStatus('cancelled')"
+            >
+              Cancelar cita
+            </button>
+          </div>
+        }
+      </div>
+    }
+  } @else if (kind()) {
+    <form (ngSubmit)="save()">
+      @switch (kind()) {
+        @case ("member") {
+          <p class="muted">
+            La persona debe tener una cuenta con el correo confirmado. El acceso
+            se aplica a este salón.
+          </p>
+          <label
+            >Correo electrónico<input
+              type="email"
+              name="email"
+              [(ngModel)]="draft.email"
+              required /></label
+          ><label
+            >Rol<select name="role" [(ngModel)]="draft.role">
+              <option value="receptionist">Recepción</option>
+              <option value="manager">Gerencia</option>
+              <option value="professional">Profesional</option>
+            </select></label
+          >
+          @if (draft.role === "professional") {
+            <label
+              >Profesional vinculado<select
+                name="employee_id"
+                [(ngModel)]="draft.employee_id"
+                required
+              >
+                <option value="">Elige profesional</option>
+                @for (e of data()?.employees; track e.id) {
+                  <option [value]="e.id">{{ e.name }}</option>
+                }
+              </select></label
+            >
+          }
+        }
+        @case ("tenant") {
+          <label
+            >Nombre del salón<input
+              name="name"
+              [(ngModel)]="draft.name"
+              required /></label
+          ><label
+            >Identificador de reservas<input
+              name="slug"
+              [(ngModel)]="draft.slug"
+              pattern="[a-z0-9][a-z0-9-]{2,59}"
+              required /></label
+          ><label
+            >Primera sede<input
+              name="branch_name"
+              [(ngModel)]="draft.branch_name"
+              required /></label
+          ><label
+            >Zona horaria<input
+              name="timezone"
+              [(ngModel)]="draft.timezone"
+              required /></label
+          ><label
+            >Dirección<input name="address" [(ngModel)]="draft.address"
+          /></label>
+        }
+        @case ("branch") {
+          <label
+            >Nombre de la sede<input
+              name="branch_name"
+              [(ngModel)]="draft.branch_name"
+              required /></label
+          ><label
+            >Zona horaria<input
+              name="timezone"
+              [(ngModel)]="draft.timezone"
+              required /></label
+          ><label
+            >Dirección<input name="address" [(ngModel)]="draft.address"
+          /></label>
+        }
+        @case ("service") {
+          <label
+            >Nombre<input
+              name="name"
+              [(ngModel)]="draft.name"
+              required
+              maxlength="140"
+          /></label>
+          <label>Categoría del servicio
+            <select name="category" [(ngModel)]="draft.category" required>
+              @for (category of serviceCategories(); track category.id) {
+                <option [value]="category.id">{{ category.name }}</option>
+              }
+            </select>
+          </label>
+          <label>Descripción pública del servicio<textarea name="description" [(ngModel)]="draft.description" maxlength="500" rows="3"></textarea></label>
+          <div class="form-grid">
+            <label
+              >Duración · minutos<input
+                type="number"
+                name="duration"
+                [(ngModel)]="draft.duration_minutes"
+                min="5"
+                max="480"
+                required /></label
+            ><label
+              >Preparación posterior · minutos<input
+                type="number"
+                name="buffer"
+                [(ngModel)]="draft.buffer_minutes"
+                min="0"
+                max="120"
+                required /></label
+            ><label
+              >Precio<input
+                type="number"
+                name="price"
+                [(ngModel)]="draft.price"
+                min="0"
+                max="100000"
+                step="0.01"
+                required /></label
+            ><label
+              >Moneda<select name="currency" [(ngModel)]="draft.currency">
+                <option>EUR</option>
+                <option>USD</option>
+                <option>MXN</option>
+                <option>CUP</option>
+                <option>COP</option>
+              </select></label
+            >
+          </div>
+          <label class="check-label"
+            ><input
+              type="checkbox"
+              name="active"
+              [(ngModel)]="draft.active"
+            />Disponible para nuevas citas</label
+          >
+        }
+        @case ("customer") {
+          <label
+            >Nombre<input
+              name="name"
+              [(ngModel)]="draft.name"
+              required
+              maxlength="140" /></label
+          ><label
+            >Correo<input
+              name="email"
+              type="email"
+              [(ngModel)]="draft.email" /></label
+          ><label
+            >Teléfono<input
+              name="phone"
+              type="tel"
+              [(ngModel)]="draft.phone"
+              maxlength="30" /></label
+          ><label
+            >Notas<textarea
+              name="notes"
+              [(ngModel)]="draft.notes"
+              maxlength="2000"
+            ></textarea>
+          </label>
+          @if (history().length) {
+            <hr class="divider" />
+            <h3>Historial de citas</h3>
+            @for (a of history(); track a.id) {
+              <p>
+                {{ a.service_name }}<br /><small
+                  >{{ a.starts_at.slice(0, 10) }} ·
+                  {{ statusLabel(a.status) }} ·
+                  {{ money(a.price_cents, a.currency) }}</small
+                >
+              </p>
+            }
+          }
+        }
+        @case ("employee") {
+          <label
+            >Nombre<input
+              name="name"
+              [(ngModel)]="draft.name"
+              required
+              maxlength="140" /></label
+          ><label
+            >Sede<select
+              name="branch"
+              [(ngModel)]="draft.branch_id"
+              required
+              [disabled]="!!editing"
+            >
+              @for (b of data()?.branches; track b.id) {
+                <option [value]="b.id">{{ b.name }}</option>
+              }
+            </select></label
+          ><label
+            >Color de agenda<select name="color" [(ngModel)]="draft.color">
+              <option value="plum">Ciruela</option>
+              <option value="sage">Salvia</option>
+              <option value="clay">Arcilla</option>
+              <option value="ochre">Avena</option>
+            </select></label
+          >
+          <fieldset>
+            <legend>Servicios que realiza</legend>
+            @for (s of data()?.services; track s.id) {
+              <label class="check-label"
+                ><input
+                  type="checkbox"
+                  [name]="s.id"
+                  [checked]="draft.service_ids.includes(s.id)"
+                  (change)="toggleService(s.id, $any($event.target).checked)"
+                />{{ s.name }}</label
+              >
+            } @empty {
+              <p class="quiet">Añade servicios al catálogo para asignarlos.</p>
+            }
+          </fieldset>
+          <label class="check-label"
+            ><input
+              type="checkbox"
+              name="active"
+              [(ngModel)]="draft.active"
+            />Profesional activo</label
+          >
+        }
+        @case ("schedule") {
+          <p class="muted">
+            {{ draft.name }} · {{ zone() }}. Añade varios tramos si hay pausa al
+            mediodía.
+          </p>
+          @for (period of draft.periods; track $index; let i = $index) {
+            <div class="weekday-row">
+              <label
+                ><span class="sr-only">Día</span
+                ><select [name]="'day' + i" [(ngModel)]="period.weekday">
+                  @for (day of dayNames; track day; let n = $index) {
+                    <option [ngValue]="n + 1">{{ day }}</option>
+                  }
+                </select></label
+              ><label
+                ><span class="sr-only">Desde</span
+                ><input
+                  type="time"
+                  [name]="'start' + i"
+                  [(ngModel)]="period.start_time"
+                  required /></label
+              ><label
+                ><span class="sr-only">Hasta</span
+                ><input
+                  type="time"
+                  [name]="'end' + i"
+                  [(ngModel)]="period.end_time"
+                  required /></label
+              ><button
+                class="icon-button"
+                type="button"
+                aria-label="Eliminar tramo"
+                (click)="draft.periods.splice(i, 1)"
+              >
+                <lv-icon name="close" />
+              </button>
+            </div>
+          }
+          <button class="button" type="button" (click)="addPeriod()">
+            <lv-icon name="plus" />Añadir tramo
+          </button>
+        }
+        @case ("absence") {
+          <p class="muted">
+            Bloquea un intervalo en la agenda de {{ draft.name }}. Zona horaria:
+            {{ zone() }}.
+          </p>
+          <label
+            >Desde<input
+              type="datetime-local"
+              name="start"
+              [(ngModel)]="draft.start"
+              required /></label
+          ><label
+            >Hasta<input
+              type="datetime-local"
+              name="end"
+              [(ngModel)]="draft.end"
+              required /></label
+          ><label
+            >Motivo<input
+              name="reason"
+              [(ngModel)]="draft.reason"
+              maxlength="300"
+              placeholder="Vacaciones, formación…"
+          /></label>
+        }
+        @case ("appointment") {
+          <label
+            >Sede<select
+              name="branch"
+              [(ngModel)]="draft.branch_id"
+              (ngModelChange)="serviceChanged()"
+              required
+            >
+              @for (b of data()?.branches; track b.id) {
+                <option [value]="b.id">{{ b.name }}</option>
+              }
+            </select></label
+          ><label
+            >Servicio<select
+              name="service"
+              [(ngModel)]="draft.service_id"
+              (ngModelChange)="serviceChanged()"
+              required
+            >
+              <option value="">Elige un servicio</option>
+              @for (s of data()?.services; track s.id) {
+                @if (s.active) {
+                  <option [value]="s.id">
+                    {{ s.name }} · {{ s.duration_minutes }} min
+                  </option>
+                }
+              }
+            </select></label
+          >
+          <div class="form-grid">
+            <label
+              >Profesional<select
+                name="employee"
+                [(ngModel)]="draft.employee_id"
+                (ngModelChange)="loadSlots()"
+                required
+              >
+                <option value="">Elige profesional</option>
+                @for (e of availableEmployees(); track e.id) {
+                  <option [value]="e.id">{{ e.name }}</option>
+                }
+              </select></label
+            ><label
+              >Fecha<input
+                name="date"
+                type="date"
+                [(ngModel)]="draft.date"
+                (ngModelChange)="loadSlots()"
+                [min]="date()"
+                required
+            /></label>
+          </div>
+          @if (slotsBusy()) {
+            <p role="status">Consultando disponibilidad…</p>
+          } @else if (slots().length) {
+            <div class="slots" aria-label="Horarios disponibles">
+              @for (slot of slots(); track slot) {
+                <button
+                  type="button"
+                  class="slot"
+                  [class.selected]="draft.starts_at === slot"
+                  [attr.aria-pressed]="draft.starts_at === slot"
+                  (click)="draft.starts_at = slot"
+                >
+                  {{ hour(slot, draftZone()) }}
+                </button>
+              }
+            </div>
+          } @else if (draft.employee_id) {
+            <p class="quiet">
+              No quedan horarios para este día. Prueba con otra fecha.
+            </p>
+          }
+          <label
+            >Cliente<select
+              name="customer"
+              [(ngModel)]="draft.customer_id"
+              required
+            >
+              <option value="">Elige un cliente</option>
+              @for (c of data()?.customers; track c.id) {
+                <option [value]="c.id">{{ c.name }}</option>
+              }
+            </select></label
+          >
+          <p class="field-help">
+            Si es un cliente nuevo, crea antes su ficha en Clientes.
+          </p>
+          <label
+            >Notas<textarea
+              name="notes"
+              [(ngModel)]="draft.notes"
+              maxlength="1000"
+            ></textarea>
+          </label>
+        }
+      }
+      <div class="actions">
+        <button class="button" type="button" (click)="close()">Volver</button
+        ><button
+          class="button primary"
+          type="submit"
+          [disabled]="
+            working() || (kind() === 'appointment' && !draft.starts_at)
+          "
+        >
+          {{
+            working()
+              ? "Guardando…"
+              : kind() === "appointment"
+                ? "Confirmar cita"
+                : "Guardar cambios"
+          }}
+        </button>
+      </div>
+    </form>
+  }
+</dialog>

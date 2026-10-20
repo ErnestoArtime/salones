@@ -1,0 +1,28 @@
+[
+  {
+    "date": "2026-10-19",
+    "macrostructure": "Workbench",
+    "theme": "Atelier",
+    "nav": "N3 Side-rail",
+    "footer": "Ft2 Inline",
+    "enrichment": "none",
+    "brief": "Lavía · agenda y reservas de salones"
+  },
+  {
+    "date": "2026-10-20",
+    "macrostructure": "Catalogue",
+    "theme": "Atelier (existing tokens preserved)",
+    "nav": "N1a Wordmark + links",
+    "footer": "Ft2 Inline",
+    "enrichment": "Local reference photography",
+    "brief": "Portal de clientes con categorías fotográficas y reserva",
+    "critique": {
+      "P": 4,
+      "H": 5,
+      "E": 4,
+      "S": 5,
+      "R": 5,
+      "V": 4
+    }
+  }
+]

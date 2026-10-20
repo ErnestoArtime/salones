@@ -1,0 +1,12 @@
+{
+  "date": "2026-10-19",
+  "project": "greenfield",
+  "genre": "editorial",
+  "theme": "Atelier",
+  "fonts": [
+    "Fraunces",
+    "IBM Plex Sans"
+  ],
+  "motion": "cut",
+  "spacing": "4pt"
+}

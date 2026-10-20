@@ -1,0 +1,20 @@
+{
+  "name": "superadmin",
+  "tags": ["type:app", "platform:web"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/dist/apps/superadmin"],
+      "options": {
+        "command": "ng build superadmin"
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "ng serve superadmin"
+      }
+    }
+  },
+  "implicitDependencies": ["contracts", "data-access", "ui"]
+}

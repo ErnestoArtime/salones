@@ -1,0 +1,189 @@
+name: ${COMPOSE_PROJECT_NAME:-lavia}
+x-logging: &logging
+  driver: json-file
+  options: { max-size: "10m", max-file: "3" }
+services:
+  db:
+    image: supabase/postgres:17.6.1.136
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run pnpm setup}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?Run pnpm setup}
+      POSTGRES_DB: postgres
+      POSTGRES_HOST: /var/run/postgresql
+      POSTGRES_PORT: 5432
+      PGPORT: 5432
+      JWT_EXP: 3600
+    ports: ["127.0.0.1:${DB_PORT:-54330}:5432"]
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - pg-config:/etc/postgresql-custom
+      - ./infra/supabase/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:ro
+      - ./infra/supabase/jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:ro
+      - ./infra/supabase/app-role.sql:/docker-entrypoint-initdb.d/init-scripts/100-app-role.sql:ro
+    command:
+      [
+        postgres,
+        -c,
+        config_file=/etc/postgresql/postgresql.conf,
+        -c,
+        log_min_messages=warning,
+      ]
+    healthcheck:
+      test: [CMD, pg_isready, -U, postgres, -h, localhost]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    mem_limit: 1200m
+  auth:
+    ports: ["127.0.0.1:${AUTH_PORT:-54331}:9999"]
+    image: supabase/gotrue:v2.197.0
+    restart: unless-stopped
+    logging: *logging
+    depends_on: { db: { condition: service_healthy } }
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: ${AUTH_EXTERNAL_URL}
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@db:5432/postgres
+      GOTRUE_SITE_URL: ${PUBLIC_URL}
+      GOTRUE_URI_ALLOW_LIST: ${PUBLIC_URL}/**,http://localhost:4300/**
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_MAILER_AUTOCONFIRM: "false"
+      GOTRUE_SMTP_ADMIN_EMAIL: ${SMTP_ADMIN_EMAIL}
+      GOTRUE_SMTP_HOST: ${SMTP_HOST}
+      GOTRUE_SMTP_PORT: ${SMTP_PORT}
+      GOTRUE_SMTP_USER: ${SMTP_USER:-}
+      GOTRUE_SMTP_PASS: ${SMTP_PASS:-}
+      GOTRUE_SMTP_SENDER_NAME: Lavia
+      GOTRUE_MAILER_URLPATHS_CONFIRMATION: /auth/v1/verify
+      GOTRUE_MAILER_URLPATHS_RECOVERY: /auth/v1/verify
+    healthcheck:
+      test:
+        [
+          CMD,
+          wget,
+          --no-verbose,
+          --tries=1,
+          --spider,
+          http://localhost:9999/health,
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    mem_limit: 256m
+  rest:
+    image: postgrest/postgrest:v14.18
+    restart: unless-stopped
+    logging: *logging
+    depends_on: { db: { condition: service_healthy } }
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${POSTGRES_PASSWORD}@db:5432/postgres
+      PGRST_DB_SCHEMAS: public,storage
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+    mem_limit: 192m
+  storage:
+    image: supabase/storage-api:v1.81.0
+    restart: unless-stopped
+    logging: *logging
+    depends_on:
+      {
+        db: { condition: service_healthy },
+        rest: { condition: service_started },
+      }
+    environment:
+      ANON_KEY: ${ANON_KEY}
+      SERVICE_KEY: ${SERVICE_ROLE_KEY}
+      POSTGREST_URL: http://rest:3000
+      AUTH_JWT_SECRET: ${JWT_SECRET}
+      DATABASE_URL: postgres://supabase_storage_admin:${POSTGRES_PASSWORD}@db:5432/postgres
+      STORAGE_PUBLIC_URL: ${PUBLIC_URL}
+      FILE_SIZE_LIMIT: 10485760
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: lavia
+      REGION: local
+      GLOBAL_S3_BUCKET: lavia
+      ENABLE_IMAGE_TRANSFORMATION: "false"
+    volumes: [storage-data:/var/lib/storage]
+    mem_limit: 384m
+  mail:
+    image: axllent/mailpit:v1.27.10
+    restart: unless-stopped
+    logging: *logging
+    ports: ["127.0.0.1:${MAIL_UI_PORT:-8131}:8025"]
+    volumes: [mail-data:/data]
+    environment: { MP_DATABASE: /data/mailpit.db, MP_MAX_MESSAGES: 1000 }
+    mem_limit: 128m
+  migrate:
+    image: lavia/api:${IMAGE_TAG:-0.1.0}
+    build: { context: ., dockerfile: infra/Dockerfile.api }
+    restart: "no"
+    depends_on:
+      {
+        db: { condition: service_healthy },
+        auth: { condition: service_healthy },
+      }
+    environment:
+      ADMIN_DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@db:5432/postgres
+    command: [node, tools/migrate.mjs]
+    mem_limit: 256m
+  api:
+    image: lavia/api:${IMAGE_TAG:-0.1.0}
+    build: { context: ., dockerfile: infra/Dockerfile.api }
+    restart: unless-stopped
+    logging: *logging
+    depends_on:
+      {
+        migrate: { condition: service_completed_successfully },
+        auth: { condition: service_healthy },
+      }
+    environment:
+      NODE_ENV: production
+      PORT: 4310
+      DATABASE_URL: postgres://salon_api:${APP_DB_PASSWORD}@db:5432/postgres
+      AUTH_URL: http://auth:9999
+      SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      PUBLIC_URL: ${PUBLIC_URL}
+      BOOKING_URL: ${BOOKING_URL}
+      STORAGE_URL: http://storage:5000
+      REPLICATE_API_TOKEN: ${REPLICATE_API_TOKEN:-}
+      STUDIO_MODEL: ${STUDIO_MODEL:-black-forest-labs/flux-2-pro}
+      PLATFORM_ADMIN_EMAILS: ${PLATFORM_ADMIN_EMAILS:-}
+    healthcheck:
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          "fetch('http://localhost:4310/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    mem_limit: 384m
+  web:
+    image: lavia/web:${IMAGE_TAG:-0.1.0}
+    build: { context: ., dockerfile: infra/Dockerfile.web }
+    restart: unless-stopped
+    logging: *logging
+    depends_on: { api: { condition: service_healthy } }
+    ports: ["127.0.0.1:${HTTP_PORT:-8130}:80"]
+    volumes: [./infra/Caddyfile:/etc/caddy/Caddyfile:ro]
+    mem_limit: 192m
+volumes:
+  pg-data:
+  pg-config:
+  storage-data:
+  mail-data:

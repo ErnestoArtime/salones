@@ -1,0 +1,49 @@
+/* Hallmark · macrostructure: Workbench · tone: editorial · anchor hue: plum · theme: Atelier · nav: N3 · footer: Ft2 */
+/* Hallmark · pre-emit critique: P4 H5 E4 S5 R5 V4 — implementation; browser verification recorded in docs/verification.md */
+@import "@fontsource-variable/fraunces";
+@import "@fontsource/ibm-plex-sans/400.css";
+@import "@fontsource/ibm-plex-sans/500.css";
+@import "@fontsource/ibm-plex-sans/600.css";
+:root {
+  --color-paper: oklch(97% 0.012 75);
+  --color-surface: oklch(99% 0.006 75);
+  --color-paper-2: oklch(94% 0.018 65);
+  --color-ink: oklch(29% 0.025 335);
+  --color-muted: oklch(48% 0.025 335);
+  --color-rule: oklch(86% 0.014 65);
+  --color-accent: oklch(39% 0.065 340);
+  --color-accent-ink: oklch(98% 0.006 75);
+  --color-focus: oklch(65.42% .13 55);
+  --color-error: oklch(43% 0.17 25);
+  --color-success: oklch(38% 0.06 150);
+  --color-sage: oklch(91% 0.032 145);
+  --color-clay: oklch(92% 0.036 40);
+  --color-plum: oklch(91% 0.025 335);
+  --color-ochre: oklch(93% 0.05 85);
+  --color-backdrop: oklch(20% 0.02 335 / 0.35);
+  --color-transparent: transparent;
+  --font-display: "Fraunces Variable", serif;
+  --font-body: "IBM Plex Sans", sans-serif;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.5rem;
+  --text-display: clamp(2.2rem, 3vw, 3.5rem);
+  --text-hero: clamp(2.75rem, 5vw, 5.25rem);
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --radius-round: 50%;
+  --rule-thin: 1px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 120ms;
+}
