@@ -46,6 +46,8 @@ export class SalonApp {
   data = signal<Workspace | null>(null);
   tenantId = "";
   page = signal("agenda");
+  menuOpen = signal(false);
+  roleLabel = computed(() => ({ owner: "Propietario", manager: "Gerencia", receptionist: "Recepción", professional: "Profesional" })[this.data()?.tenant.role ?? "owner"] ?? "Equipo");
   date = signal(localDay());
   layout = signal("calendar");
   search = signal("");
@@ -76,11 +78,11 @@ export class SalonApp {
     "Domingo",
   ];
   nav = [
-    { key: "studio", label: "Estudio virtual", icon: "scissors" },
     { key: "agenda", label: "Agenda", icon: "calendar" },
     { key: "customers", label: "Clientes", icon: "people" },
     { key: "services", label: "Servicios", icon: "scissors" },
-    { key: "employees", label: "Equipo", icon: "people" },
+    { key: "employees", label: "Equipo", icon: "team" },
+    { key: "studio", label: "Estudio virtual", icon: "portrait" },
     { key: "site", label: "Página de clientes", icon: "link" },
     { key: "settings", label: "Mi salón", icon: "settings" },
   ];
@@ -229,8 +231,15 @@ export class SalonApp {
       this.tenants.set([]);
     }
   }
+  closeMenu() {
+    this.menuOpen.set(false);
+    document.querySelector<HTMLButtonElement>(".mobile-menu")?.focus();
+  }
   navigate(key: string) {
     this.page.set(key);
+    this.menuOpen.set(false);
+    document.title = this.title() + " · Lavía";
+    requestAnimationFrame(() => document.querySelector<HTMLElement>(".workspace h1")?.focus({preventScroll:true}));
     this.search.set("");
     this.notice.set("");
     if (key === "settings" && this.data()?.tenant.role === "owner")

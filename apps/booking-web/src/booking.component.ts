@@ -64,6 +64,14 @@ export class BookingApp {
   date = signal(localDay());
   time = signal("");
   slots = signal<string[]>([]);
+  slotGroups = computed(() => {
+    const groups = [{label:"Mañana",slots:[] as string[]}, {label:"Tarde",slots:[] as string[]}, {label:"Noche",slots:[] as string[]}];
+    for (const slot of this.slots()) {
+      const localHour = Number(new Intl.DateTimeFormat("en-GB", {hour:"2-digit",hourCycle:"h23",timeZone:this.zone()}).format(new Date(slot)));
+      groups[localHour < 12 ? 0 : localHour < 19 ? 1 : 2].slots.push(slot);
+    }
+    return groups.filter(group => group.slots.length);
+  });
   customer = { name: "", email: "", phone: "" };
   consent = false;
   confirmation = signal<any>(null);

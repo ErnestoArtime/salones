@@ -1,6 +1,6 @@
 import "dotenv/config";
 import pg from "pg";
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 import { readFileSync, mkdirSync } from "node:fs";
 const demo = JSON.parse(readFileSync(".local/demo.json", "utf8"));
 mkdirSync(".local/screenshots", { recursive: true });
@@ -10,7 +10,7 @@ async function login(page: any) {
   await page.getByLabel("Contraseña", { exact: true }).fill(demo.password);
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Cada cita, a su tiempo." }),
+    page.getByRole("heading", { name: "Agenda" }),
   ).toBeVisible();
 }
 async function noOverflow(page: any) {
@@ -140,7 +140,7 @@ test("superadministración: plan y acceso protegidos", async ({ page }) => {
   await page.getByLabel("Contraseña", { exact: true }).fill(demo.password);
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Detrás de cada salón." }),
+    page.getByRole("heading", { name: "Salones" }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Estudio demo · datos de ejemplo" }),
@@ -181,7 +181,7 @@ test("estudio virtual: catálogo, estado sin proveedor y móvil", async ({
     .getByRole("button", { name: "Estudio virtual", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "Preparado para conectar la IA." }),
+    page.getByRole("heading", { name: "Generación pendiente de activar" }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Generar simulación" }),
@@ -196,11 +196,11 @@ test("estudio virtual: catálogo, estado sin proveedor y móvil", async ({
   }
   await page.getByRole("button", { name: "Catálogo", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Añadir un trabajo." }),
+    page.getByRole("heading", { name: "Nuevo trabajo" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Historial", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Ideas que habéis probado." }),
+    page.getByRole("heading", { name: "Pruebas realizadas" }),
   ).toBeVisible();
 });
 

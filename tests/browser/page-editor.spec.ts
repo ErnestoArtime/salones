@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 import { readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import pg from "pg";
@@ -12,13 +12,13 @@ test("personalizar salón: subir fotos, publicar textos/categorías y editar ser
  const admin=new pg.Client({connectionString:process.env.ADMIN_DATABASE_URL});await admin.connect();
  let tenant="";
  try{
-  await page.goto("/");await page.getByLabel("Correo electrónico").fill(demo.email);await page.getByLabel("Contraseña",{exact:true}).fill(demo.password);await page.getByRole("button",{name:"Entrar",exact:true}).click();await expect(page.getByRole("heading",{name:"Cada cita, a su tiempo."})).toBeVisible();
+  await page.goto("/");await page.getByLabel("Correo electrónico").fill(demo.email);await page.getByLabel("Contraseña",{exact:true}).fill(demo.password);await page.getByRole("button",{name:"Entrar",exact:true}).click();await expect(page.getByRole("heading",{name:"Agenda"})).toBeVisible();
   const slug="editor-qa-"+randomUUID().slice(0,10);
   const created=await page.request.post("/api/tenants",{data:{name:"Salón temporal QA",slug,branch_name:"Sede QA",timezone:"Europe/Madrid",address:"Dirección QA"}});expect(created.ok()).toBeTruthy();tenant=(await created.json()).id;
   const serviceResponse=await page.request.post("/api/tenants/"+tenant+"/services",{data:{name:"Cuidado QA",category:"hair",duration_minutes:30,price_cents:2200}});expect(serviceResponse.ok()).toBeTruthy();const service=(await serviceResponse.json()).id;
   await page.reload();await page.locator(".topbar select").selectOption(tenant);
   await page.getByRole("button",{name:"Página de clientes",exact:true}).click();
-  await expect(page.getByRole("heading",{name:"Tu salón, a tu manera."})).toBeVisible();
+  await expect(page.getByRole("heading",{name:"Página de clientes"})).toBeVisible();
   await page.getByLabel("Nombre público del salón").fill("Estudio QA personalizado");
   await page.getByLabel("Título de portada",{exact:true}).fill("Tu ritual QA");
   await page.getByLabel("Usar fotos de referencia").uncheck();

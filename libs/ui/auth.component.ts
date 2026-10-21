@@ -36,7 +36,7 @@ import { Icon } from "./icon";
                 ? "Recupera tu espacio."
                 : register()
                   ? "Empecemos por ti."
-                  : "Qué bueno verte."
+                  : admin() ? "Acceso a plataforma" : "Entra a tu salón"
           }}
         </h2>
         <p class="muted">
@@ -47,7 +47,7 @@ import { Icon } from "./icon";
                 ? "Te enviaremos un enlace a tu correo."
                 : register()
                   ? "Crea tu cuenta y prepara tu salón."
-                  : "Entra para organizar el día de tu salón."
+                  : admin() ? "Gestiona los planes y el acceso de los salones." : "Tu agenda, tu equipo y tus clientes, en un solo lugar."
           }}
         </p>
         <form (ngSubmit)="submit()">
@@ -75,7 +75,7 @@ import { Icon } from "./icon";
                 minlength="10"
                 maxlength="128"
             /></label>
-            <p class="field-help">Mínimo 10 caracteres.</p>
+            @if (register() || reset()) {<p class="field-help">Mínimo 10 caracteres.</p>}
           }
           @if (error()) {
             <p class="error" role="alert">{{ error() }}</p>

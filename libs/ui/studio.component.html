@@ -7,15 +7,15 @@
 @if (state(); as s) {
   <div class="toolbar">
     <div class="segmented">
-      <button [class.active]="tab() === 'try'" (click)="tab.set('try')">
-        Probar un estilo</button
+      <button [class.active]="tab() === 'try'" [attr.aria-pressed]="tab() === 'try'" (click)="tab.set('try')">
+        Probar estilo</button
       ><button
-        [class.active]="tab() === 'catalog'"
+        [class.active]="tab() === 'catalog'" [attr.aria-pressed]="tab() === 'catalog'"
         (click)="tab.set('catalog')"
       >
         Catálogo</button
       ><button
-        [class.active]="tab() === 'history'"
+        [class.active]="tab() === 'history'" [attr.aria-pressed]="tab() === 'history'"
         (click)="tab.set('history')"
       >
         Historial
@@ -25,18 +25,16 @@
   </div>
   @if (!s.provider_ready) {
     <div class="studio-provider-note">
-      <h3>Preparado para conectar la IA.</h3>
+      <h3>Generación pendiente de activar</h3>
       <p>
-        La API externa aún no tiene clave. Ya puedes preparar los trabajos del
-        salón y subir fotos privadas; la generación se activará cuando
-        configuremos el proveedor.
+        Puedes preparar el catálogo y las fotos. Para generar simulaciones falta configurar el proveedor de IA.
       </p>
     </div>
   }
   @if (tab() === "catalog") {
     <div class="studio-layout">
       <section>
-        <h2>Trabajos con firma propia.</h2>
+        <h2>Catálogo de trabajos</h2>
         <p class="muted" style="margin-block: 16px">
           Cortes, colores y acabados realizados por tu equipo. Gerencia decide
           cuáles se pueden probar.
@@ -91,7 +89,7 @@
       </section>
       @if (canCurate()) {
         <section class="studio-editor">
-          <h2>Añadir un trabajo.</h2>
+          <h2>Nuevo trabajo</h2>
           <form class="stack" (ngSubmit)="saveStyle()">
             <label
               >Nombre del estilo<input
@@ -181,7 +179,7 @@
       }
     </div>
   } @else if (tab() === "history") {
-    <h2>Ideas que habéis probado.</h2>
+    <h2>Pruebas realizadas</h2>
     <p class="muted" style="margin-block: 16px">
       Las fotos y resultados caducan a las 72 horas. Borrar una foto elimina las
       pruebas que la utilizan del historial activo.
@@ -220,7 +218,7 @@
   } @else {
     <div class="studio-layout">
       <section>
-        <h2>¿Y si lo viéramos antes?</h2>
+        <h2>Elige un trabajo del catálogo</h2>
         <p class="muted" style="margin-block: 16px">
           Una simulación para conversar sobre el próximo look. Tu profesional
           valida lo que se puede conseguir.
@@ -292,7 +290,7 @@
               [disabled]="busy() || job.status === 'running'"
               (click)="remove(job)"
             >
-              Borrar fotos y pruebas asociadas
+              Borrar fotos de la prueba
             </button>
           </div>
         }
@@ -325,7 +323,7 @@
         </div>
       </section>
       <section class="studio-editor">
-        <h2>El rostro del cliente.</h2>
+        <h2>Foto del cliente</h2>
         <div class="stack" style="margin-top: 24px">
           <label class="check-label"
             ><input type="checkbox" [(ngModel)]="photoConsent" />El cliente
@@ -372,11 +370,7 @@
             autoriza enviar su foto y la referencia del peinado a Replicate para
             generar esta simulación.</label
           >
-          <p class="quiet">
-            Lavía no utiliza estas fotos para entrenar modelos. La retención del
-            proveedor debe revisarse antes de activar la API. Las copias de
-            seguridad pueden conservar fotos hasta su rotación.
-          </p>
+          <details class="studio-privacy"><summary>Tratamiento de las fotografías</summary><p>Lavía no utiliza estas fotos para entrenar modelos. La retención del proveedor debe revisarse antes de activar la API. Las copias de seguridad pueden conservar fotos hasta su rotación.</p></details>
           <button
             class="button primary"
             [disabled]="
@@ -392,15 +386,7 @@
             {{ busy() ? "Preparando…" : "Generar simulación"
             }}<lv-icon name="arrow" />
           </button>
-          <p class="field-help">
-            {{
-              !s.provider_ready
-                ? "Pendiente de configurar la API externa."
-                : s.usage >= s.limit
-                  ? "Cuota mensual agotada."
-                  : "Cada solicitud reserva una unidad de la cuota. Los fallos pueden tener coste en el proveedor."
-            }}
-          </p>
+          @if (s.provider_ready) {<p class="field-help">{{s.usage >= s.limit ? 'Cuota mensual agotada.' : 'Cada solicitud reserva una unidad de la cuota. Los fallos pueden tener coste en el proveedor.'}}</p>}
         </div>
       </section>
     </div>

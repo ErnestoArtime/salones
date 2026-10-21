@@ -29,6 +29,11 @@ export class PageEditorComponent {
     {key:"visit_description",label:"Texto de tu visita",max:600,multiline:true},
     {key:"footer_text",label:"Texto del pie de página",max:140,multiline:false},
   ] as const;
+  copyGroups = [
+    {title:"Textos de portada",open:true,fields:this.textFields.slice(0,5)},
+    {title:"Categorías y catálogo",open:false,fields:this.textFields.slice(5,9)},
+    {title:"Visita y pie de página",open:false,fields:this.textFields.slice(9)},
+  ];
   constructor(){effect(()=>{this.tenantId();this.page={...PAGE_DEFAULTS};this.categories=[];this.assets=[];this.services=[];this.serviceDraft=null;this.selectedService="";this.revision=0;this.rights=false;this.error.set("");this.notice.set("");void this.load();});}
   async load(){
     const tenant=this.tenantId();this.loading.set(true);

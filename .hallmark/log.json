@@ -1,5 +1,21 @@
 [
   {
+    "date": "2026-10-21",
+    "scope": "app",
+    "macrostructure": "Workbench / Catalogue / sequential booking",
+    "theme": "Atelier",
+    "enrichment": "Existing salon and reference photography",
+    "brief": "Rediseño unificado de gestión, reservas y plataforma; móvil con navegación identificada y contenido por tarea",
+    "critique": {
+      "P": 5,
+      "H": 5,
+      "E": 4,
+      "S": 5,
+      "R": 5,
+      "V": 4
+    }
+  },
+  {
     "date": "2026-10-19",
     "macrostructure": "Workbench",
     "theme": "Atelier",

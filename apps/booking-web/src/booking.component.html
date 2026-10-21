@@ -41,13 +41,13 @@
           <p class="salon-name">{{ salonName() }}</p>
           <h1 id="hero-title" [class.long-title]="pageSettings().hero_title.length>50">{{pageSettings().hero_title}}</h1>
           <p>{{pageSettings().hero_description}}</p>
-          <a [href]="anchor('catalogo')" class="button primary hero-cta" [class.long-label]="pageSettings().hero_button.length>24">{{pageSettings().hero_button}}<lv-icon name="arrow" /></a>
-          <div class="hero-note"><lv-icon name="calendar" /><span>Reserva online, sin crear una cuenta.<br />Elige tu servicio y consulta la agenda.</span></div>
+          <a [href]="anchor('catalogo')" class="button primary hero-cta" [class.long-label]="pageSettings().hero_button.length>24"><span class="cta-label" [title]="pageSettings().hero_button">{{pageSettings().hero_button}}</span><lv-icon name="arrow" /></a>
+          <div class="hero-note"><lv-icon name="calendar" /><span>Reserva online, sin crear una cuenta.</span></div>
         </div>
         @if (heroImage(); as src) {
           <figure class="hero-photo"><img [src]="src" [alt]="pageSettings().hero_asset_id ? 'Portada de ' + salonName() : 'Imagen de referencia de peluquería'" width="1200" height="1800" fetchpriority="high" /><figcaption>{{pageSettings().hero_caption}}</figcaption></figure>
         }
-        <div class="hero-bottom"><span>Pelo, manos, piel. Y un poco de calma.</span><a [href]="anchor('experiencias')" aria-label="Explorar las categorías de servicios">Explora los cuidados <span aria-hidden="true">↓</span></a></div>
+
       </section>
       <section id="experiencias" class="experience-section" aria-labelledby="experience-title">
         <div class="section-title"><h2 id="experience-title">{{pageSettings().categories_title}}</h2><p>{{pageSettings().categories_description}}</p></div>
@@ -65,15 +65,12 @@
         </div>
       </section>
     }
-    <main id="contenido" class="booking-layout" [class.catalog-layout]="step() === 1 && !cancelId()">
+    <main id="contenido" class="booking-layout" [class.flow-layout]="step() > 1 || !!cancelId()" [class.catalog-layout]="step() === 1 && !cancelId()">
       @if (step() > 1 || cancelId()) {
       <aside class="booking-intro">
         <p class="quiet">{{ salon()?.name }}</p>
-        <h1>Haz espacio<br />para ti.</h1>
-        <p class="muted salon-description">
-          Elige tu servicio y encuentra ese momento en el que todo lo demás
-          puede esperar.
-        </p>
+        <h1>{{cancelId() ? 'Gestiona tu cita' : step() === 2 ? 'Elige tu horario' : step() === 3 ? 'Tus datos' : 'Cita confirmada'}}</h1>
+        @if (service()) {<p class="flow-service">{{service()?.name}}</p><p class="quiet">{{service()?.duration_minutes}} min · {{money(service()?.price_cents ?? 0,service()?.currency)}}</p>}
         <div class="booking-location">
           <p>{{ branch()?.name }}</p>
           <p class="quiet">{{ branch()?.address }}</p>
@@ -140,7 +137,7 @@
                 @for (s of filteredServices(); track s.id) {
                   <article class="service-card" [class.is-selected]="serviceId() === s.id">
                     @if (serviceImage(s); as src) {<img [src]="src" [alt]="s.photo_asset_id ? s.name : categoryLabels[s.category]" width="800" height="600" loading="lazy" />} @else {<div class="service-no-photo">{{categoryLabels[s.category]}}</div>}
-                    <div class="service-card-body"><p class="service-category">{{ categoryLabels[s.category] }}</p><h3>{{ s.name }}</h3>@if(s.description) {<p class="service-description">{{s.description}}</p>}<p class="service-duration"><lv-icon name="clock" />{{ s.duration_minutes }} minutos · Pago en el salón</p>
+                    <div class="service-card-body"><p class="service-category">{{ categoryLabels[s.category] }}</p><h3>{{ s.name }}</h3>@if(s.description) {<p class="service-description">{{s.description}}</p>}<p class="service-duration"><lv-icon name="clock" />{{ s.duration_minutes }} minutos</p>
                       <div class="service-card-bottom"><strong>{{ money(s.price_cents, s.currency) }}</strong>
                         <button class="button" [class.primary]="serviceId() === s.id" [attr.aria-pressed]="serviceId() === s.id" [attr.aria-label]="(serviceId() === s.id ? 'Seleccionado: ' : 'Elegir ') + s.name" (click)="choose(s.id)">{{ serviceId() === s.id ? 'Seleccionado' : 'Elegir' }}<lv-icon [name]="serviceId() === s.id ? 'check' : 'plus'" /></button>
                       </div>
@@ -156,7 +153,7 @@
               </div>
             }
             @case (2) {
-              <h2>Encuentra tu momento.</h2>
+              <h2 class="sr-only">Disponibilidad</h2>
               <div class="stack">
                 @if ((salon()?.branches?.length ?? 0) > 1) {
                   <label
@@ -188,29 +185,20 @@
                     (ngModelChange)="date.set($event); loadSlots()"
                     [min]="today()"
                 /></label>
-                <p class="quiet">
-                  {{ service()?.name }} · {{ service()?.duration_minutes }} min
-                  ·
-                  {{ money(service()?.price_cents ?? 0, service()?.currency) }}
-                </p>
+
                 @if (slotsBusy()) {
                   <p role="status">Buscando huecos en la agenda…</p>
                 } @else if (slots().length) {
-                  <div class="slots" aria-label="Horarios disponibles">
-                    @for (slot of slots(); track slot) {
-                      <button
-                        class="slot"
-                        [class.selected]="time() === slot"
-                        [attr.aria-pressed]="time() === slot"
-                        (click)="time.set(slot)"
-                      >
-                        {{ hour(slot, zone()) }}
-                      </button>
+                  <div class="slot-groups" aria-label="Horarios disponibles">
+                    @for (group of slotGroups(); track group.label) {
+                      <section class="slot-group" [attr.aria-label]="group.label"><h3>{{group.label}}</h3><div class="slots">
+                        @for (slot of group.slots; track slot) {<button class="slot" [class.selected]="time() === slot" [attr.aria-pressed]="time() === slot" (click)="time.set(slot)">{{hour(slot,zone())}}</button>}
+                      </div></section>
                     }
                   </div>
                 } @else {
                   <div class="empty">
-                    <h3>Hoy está todo reservado.</h3>
+                    <h3>No hay horarios disponibles.</h3>
                     <p>Prueba con otra fecha o profesional.</p>
                   </div>
                 }
@@ -228,9 +216,9 @@
               </div>
             }
             @case (3) {
-              <h2>Ya casi es tuyo.</h2>
+              <h2 class="sr-only">Datos de contacto</h2>
               <div class="booking-summary">
-                <h3>{{ service()?.name }}</h3>
+                <h3>Resumen de tu cita</h3>
                 <p class="quiet" style="margin-block: 8px">
                   {{ prettyDate() }} · {{ hour(time(), zone()) }}<br />Con
                   {{ employee()?.name }}
@@ -274,8 +262,7 @@
                   cita.</label
                 >
                 <p class="field-help">
-                  Puedes cancelar con el enlace que recibirás al confirmar.
-                  Guarda ese enlace.
+                  Usaremos tus datos para gestionar esta cita.
                 </p>
                 <button
                   class="button primary wide"

@@ -1,12 +1,19 @@
 {
-  "date": "2026-10-19",
-  "project": "greenfield",
+  "date": "2026-10-21",
+  "project": "Lavía (existing application)",
   "genre": "editorial",
   "theme": "Atelier",
   "fonts": [
-    "Fraunces",
+    "Fraunces Variable",
     "IBM Plex Sans"
   ],
   "motion": "cut",
-  "spacing": "4pt"
+  "spacing": "4pt",
+  "system": "design.md",
+  "preserved": [
+    "brand",
+    "routes",
+    "tenant content",
+    "business rules"
+  ]
 }

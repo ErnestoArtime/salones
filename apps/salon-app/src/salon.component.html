@@ -56,12 +56,12 @@
   </main>
 } @else {
   <div class="shell">
-    <aside class="sidebar">
+    <aside class="sidebar" [class.menu-open]="menuOpen()" (keydown.escape)="closeMenu()">
       <div class="sidebar-head">
         <a class="wordmark" href="/" aria-label="Lavía, inicio">lavía</a
-        ><span class="quiet">Salones</span>
+        ><button class="button mobile-menu" type="button" [attr.aria-expanded]="menuOpen()" aria-controls="salon-navigation" [attr.aria-label]="menuOpen() ? 'Cerrar navegación' : 'Abrir navegación'" (click)="menuOpen.set(!menuOpen())"><lv-icon [name]="menuOpen() ? 'close' : 'menu'" />{{menuOpen() ? 'Cerrar menú' : title()}}</button>
       </div>
-      <nav aria-label="Gestión del salón">
+      <nav id="salon-navigation" aria-label="Gestión del salón">
         @for (item of nav; track item.key) {
           <button
             class="nav-link"
@@ -75,13 +75,13 @@
         }
       </nav>
       <div class="sidebar-bottom">
-        <p class="quiet">El espacio detrás<br />de cada buen día.</p>
+
         <a
           class="text-button"
           [href]="bookingUrl()"
           target="_blank"
           rel="noopener"
-          >Ver reservas<lv-icon name="arrow" /></a
+          >Página de reservas<lv-icon name="arrow" /></a
         ><button class="text-button" (click)="logout()">
           <lv-icon name="logout" />Cerrar sesión
         </button>
@@ -97,11 +97,7 @@
           </select></label
         >
         <div class="topbar-right">
-          <span class="quiet">{{
-            data()?.tenant?.role === "owner"
-              ? "Propietario"
-              : data()?.tenant?.role
-          }}</span
+          <span class="quiet">{{ roleLabel() }}</span
           ><span class="avatar" aria-hidden="true">{{
             user()?.email?.slice(0, 2)?.toUpperCase()
           }}</span
@@ -126,11 +122,9 @@
       @if (data(); as w) {
         <div class="page-heading">
           <div>
-            <p class="quiet">
-              {{ page() === "agenda" ? dayTitle() : w.tenant.name }}
-            </p>
-            <h1>
-              {{ page() === "agenda" ? "Cada cita, a su tiempo." : title() }}
+            @if (page() === "agenda") {<p class="quiet">{{dayTitle()}}</p>}
+            <h1 tabindex="-1">
+              {{ title() }}
             </h1>
           </div>
           @if (page() === "agenda" && canBook()) {
@@ -177,7 +171,7 @@
               </div>
               <div class="stat">
                 <strong>{{ revenue() }}</strong
-                ><small>Valor de servicios completados</small>
+                ><small>Servicios completados · valor</small>
               </div>
               <div class="stat">
                 <strong>{{ professionalColumns().length }}</strong
@@ -231,17 +225,17 @@
                 >
                 <div class="segmented">
                   <button
-                    [class.active]="layout() === 'calendar'"
+                    [class.active]="layout() === 'calendar'" [attr.aria-pressed]="layout() === 'calendar'"
                     (click)="setLayout('calendar')"
                   >
                     Agenda</button
                   ><button
-                    [class.active]="layout() === 'list'"
+                    [class.active]="layout() === 'list'" [attr.aria-pressed]="layout() === 'list'"
                     (click)="setLayout('list')"
                   >
                     Lista</button
                   ><button
-                    [class.active]="layout() === 'week'"
+                    [class.active]="layout() === 'week'" [attr.aria-pressed]="layout() === 'week'"
                     (click)="setLayout('week')"
                   >
                     Semana
@@ -369,9 +363,9 @@
                 </button>
               } @empty {
                 <div class="empty">
-                  <h3>Un espacio por llenar.</h3>
+                  <h3>No hay citas para este día.</h3>
                   <p>
-                    No hay citas para este día. Puedes crear una o compartir tu
+                    Crea una cita o comparte tu
                     enlace de reservas.
                   </p>
                   @if (canBook()) {
@@ -391,7 +385,7 @@
               @for (s of w.services; track s.id; let i = $index) {
                 <article class="catalog-row">
                   <div class="row">
-                    <span class="service-index">{{
+                    <span class="service-index" aria-hidden="true">{{
                       (i + 1).toString().padStart(2, "0")
                     }}</span>
                     <div>
@@ -671,7 +665,7 @@
           }
         }
         <footer class="page-foot">
-          <span>Lavía · Espacio para hacerlo bien.</span
+          <span>Lavía · Gestión del salón</span
           ><span>{{ w.branches[0]?.timezone }}</span>
         </footer>
       } @else {
