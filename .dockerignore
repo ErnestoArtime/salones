@@ -11,3 +11,5 @@ playwright-report
 .angular
 .env.*
 !.env.example
+
+__pycache__/

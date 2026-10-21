@@ -20,18 +20,20 @@ y conserva el resto de la configuración.
 El `.env` del VPS utiliza `PUBLIC_URL=https://lavia.eav-labs.com`,
 `BOOKING_URL=https://lavia.eav-labs.com/booking`,
 `AUTH_EXTERNAL_URL=https://lavia.eav-labs.com/auth/v1` y `COOKIE_SECURE=true`.
-Tras cambiar estas variables, recrear API, Auth y Storage.
+En el despliegue automático, cambiar estas variables requiere una actualización operativa de infraestructura; consultar [la guía](auto-deploy.md) antes de recrear servicios.
 Verificación de navegador: `TEST_WEB_URL=https://lavia.eav-labs.com pnpm run test:e2e`.
 
 El único frontend expuesto por Compose escucha en `127.0.0.1:8130`. Auth local usa 54331, PostgreSQL local 54330 y Mailpit 8131, también ligados a loopback. Los demás servicios se comunican en la red privada del proyecto. Nunca publiques PostgreSQL, GoTrue, Mailpit ni Storage directamente en Internet.
 
 Para publicar el piloto, dirige el dominio al proxy HTTPS que ya usa el VPS y reenvía al puerto 8130. Caddy dentro del proyecto sirve las tres aplicaciones bajo `/`, `/booking/` y `/admin/` y enruta la API. Si se instala en un VPS vacío, un proxy TLS externo puede cumplir la misma función; no necesitas cambiar las aplicaciones.
 
-Ajusta en `.env` `PUBLIC_URL`, `BOOKING_URL`, `AUTH_EXTERNAL_URL` y `COOKIE_SECURE=true`. `AUTH_EXTERNAL_URL` debe terminar en `/auth/v1`. Define el correo confirmado del administrador en `PLATFORM_ADMIN_EMAILS`. El origen permitido de escritura se compara con `PUBLIC_URL`; usa exactamente ese host al abrir la web. Tras cambios ejecuta `docker compose up -d --force-recreate api auth`.
+Ajusta en `.env` `PUBLIC_URL`, `BOOKING_URL`, `AUTH_EXTERNAL_URL` y `COOKIE_SECURE=true`. `AUTH_EXTERNAL_URL` debe terminar en `/auth/v1`. Define el correo confirmado del administrador en `PLATFORM_ADMIN_EMAILS`. El origen permitido de escritura se compara con `PUBLIC_URL`; usa exactamente ese host al abrir la web. En el VPS gestionado, coordina estos cambios con el supervisor como actualización de infraestructura.
 
 El buzón local permite probar confirmaciones y recuperación. Antes de abrir registros a clientes externos configura SMTP en las variables existentes y recrea Auth. No se ha contratado ni configurado ningún proveedor externo.
 
 ## Comandos
+
+En este VPS las actualizaciones desde `main` están gestionadas por systemd. Consultar [despliegue automático](auto-deploy.md) para estado, logs y mantenimiento. Los comandos Compose siguientes deben ejecutarse desde la release activa con su `IMAGE_TAG` y proyecto `lavia`; `tools/deploy.sh` delega automáticamente en el supervisor cuando está instalado.
 
 ```sh
 docker compose ps

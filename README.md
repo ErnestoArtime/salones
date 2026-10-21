@@ -91,3 +91,5 @@ Más información: [arquitectura](docs/architecture.md), [operación y migració
 Portal visual y categorías: [documentación](docs/public-catalog.md).
 
 Personalización: [guía de uso y almacenamiento](docs/page-personalization.md).
+
+Actualizaciones del VPS: [despliegue automático desde main](docs/auto-deploy.md).

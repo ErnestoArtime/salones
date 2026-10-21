@@ -9,3 +9,5 @@ Run `pnpm run build` for TypeScript and Angular template validation. Integration
 Keep tenant identity and roles server-derived. The API runtime role must never become owner/superuser/BYPASSRLS. Public booking code must only use its slug-scoped transaction context. Preserve transactional locking and the PostgreSQL exclusion constraint when changing availability.
 
 Visual system: tokens.css, Fraunces + IBM Plex Sans served locally, warm paper and plum. Use the existing shared tokens. Angular production must keep inlineCritical=false: the strict CSP intentionally blocks inline scripts and their generated CSS onload handlers.
+
+Production is managed by lavia-deploy.timer, pulling main over SSH. Read docs/auto-deploy.md before deployment changes. Use lavia-deploy status for the active release/tag; do not run compose up from this development checkout over the managed production release. tools/deploy.sh delegates to the supervisor once installed.

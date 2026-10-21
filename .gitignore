@@ -12,3 +12,5 @@ apps/salon-app/android/
 apps/salon-app/ios/
 .local/
 .angular/
+
+__pycache__/

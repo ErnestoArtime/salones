@@ -1,0 +1,11 @@
+[Unit]
+Description=Check Lavía main for a new release every minute
+
+[Timer]
+OnBootSec=45s
+OnUnitInactiveSec=60s
+RandomizedDelaySec=5s
+Unit=lavia-deploy.service
+
+[Install]
+WantedBy=timers.target

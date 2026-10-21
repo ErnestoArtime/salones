@@ -1,0 +1,19 @@
+[Unit]
+Description=Deploy Lavía from GitHub main while preserving existing data
+Wants=network-online.target docker.service
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+User=ernesto
+Group=ernesto
+UMask=0077
+Environment=HOME=/home/ernesto
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+ExecStart=/usr/local/bin/lavia-deploy check
+TimeoutStartSec=45min
+TimeoutStopSec=180
+KillMode=mixed
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=6
