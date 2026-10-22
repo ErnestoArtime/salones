@@ -11,15 +11,16 @@ import { Icon } from "./icon";
       <a class="wordmark" href="/">lavía</a>
       <div>
         <p class="quiet">Hecho para el oficio de cuidar.</p>
-        <h1>Tu salón,<br />con otro ritmo.</h1>
+        <h1>Tu talento.<br />Tu espacio.</h1>
+        <img class="auth-photo" src="/booking/images/hero.webp" alt="Fotografía ilustrativa del trabajo de peluquería" width="1200" height="800" />
         <p>
           Menos llamadas entre citas.<br />Más tiempo para quien se sienta
           frente a ti.
         </p>
       </div>
-      <footer>Agenda · Equipo · Clientes</footer>
+      <footer>Agenda · Equipo · Clientes<br /><small>Fotografía ilustrativa de Pexels.</small></footer>
     </aside>
-    <main class="auth-main">
+    <main class="auth-main"><header class="auth-brand"><a class="wordmark" href="/">lavía</a><span class="quiet">{{admin() ? 'Plataforma' : 'Gestión de salones'}}</span></header>
       <div class="auth-form">
         <p class="quiet">
           {{

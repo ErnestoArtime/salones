@@ -19,7 +19,7 @@ async function noOverflow(page: any) {
       .locator(".wordmark")
       .first()
       .evaluate((e: any) => getComputedStyle(e).fontFamily),
-  ).toContain("Fraunces");
+  ).toContain("Manrope");
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,

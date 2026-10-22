@@ -1,29 +1,36 @@
-/* Hallmark · macrostructure: Workbench · tone: editorial · anchor hue: plum · theme: Atelier · nav: N3 · footer: Ft2 */
-/* Hallmark · pre-emit critique: P4 H5 E4 S5 R5 V4 — implementation; browser verification recorded in docs/verification.md */
-@import "@fontsource-variable/fraunces";
-@import "@fontsource/ibm-plex-sans/400.css";
-@import "@fontsource/ibm-plex-sans/500.css";
-@import "@fontsource/ibm-plex-sans/600.css";
+/* Hallmark · genre: modern-minimal · macrostructure: Cover + service index / Studio console
+ * theme: Coral adapted for Lavía · design-system: design.md · designed-as-app
+ * pre-emit critique: P5 H5 E4 S5 R5 V5 */
+@import "@fontsource-variable/manrope";
+@import "@fontsource-variable/dm-sans";
 :root {
-  --color-paper: oklch(97% 0.012 75);
-  --color-surface: oklch(99% 0.006 75);
-  --color-paper-2: oklch(94% 0.018 65);
-  --color-ink: oklch(29% 0.025 335);
-  --color-muted: oklch(48% 0.025 335);
-  --color-rule: oklch(86% 0.014 65);
-  --color-accent: oklch(39% 0.065 340);
-  --color-accent-ink: oklch(98% 0.006 75);
-  --color-focus: oklch(65.42% .13 55);
+  --color-paper: oklch(97.5% 0.004 250);
+  --color-surface: oklch(100% 0 0);
+  --color-paper-2: oklch(94% 0.005 250);
+  --color-ink: oklch(22% 0.01 260);
+  --color-muted: oklch(45% 0.015 260);
+  --color-rule: oklch(86% 0.008 250);
+  --color-control-rule: oklch(64% 0.012 250);
+  --color-accent: oklch(48% 0.16 28);
+  --color-accent-ink: oklch(100% 0 0);
+  --color-accent-soft: oklch(95% 0.025 28);
+  --color-focus: oklch(52% 0.17 28);
   --color-error: oklch(43% 0.17 25);
-  --color-success: oklch(38% 0.06 150);
-  --color-sage: oklch(91% 0.032 145);
-  --color-clay: oklch(92% 0.036 40);
-  --color-plum: oklch(91% 0.025 335);
-  --color-ochre: oklch(93% 0.05 85);
-  --color-backdrop: oklch(20% 0.02 335 / 0.35);
+  --color-success: oklch(37% 0.07 158);
+  --color-sage: oklch(94% 0.025 158);
+  --color-clay: oklch(95% 0.03 40);
+  --color-plum: oklch(95% 0.022 310);
+  --color-ochre: oklch(95% 0.04 85);
+  --color-backdrop: oklch(18% 0.01 260 / 0.5);
   --color-transparent: transparent;
-  --font-display: "Fraunces Variable", serif;
-  --font-body: "IBM Plex Sans", sans-serif;
+  --color-shadow: oklch(22% 0.01 260 / 0.06);
+  --color-inverse: oklch(98% 0.004 250);
+  --color-inverse-muted: oklch(80% 0.01 250);
+  --color-inverse-rule: oklch(40% 0.01 260);
+  --color-inverse-surface: oklch(30% 0.012 260);
+  --font-display: "Manrope Variable", sans-serif;
+  --font-body: "DM Sans Variable", sans-serif;
+  --space-2xs: 2px;
   --space-xs: 4px;
   --space-sm: 8px;
   --space-md: 16px;
@@ -31,33 +38,26 @@
   --space-xl: 32px;
   --space-2xl: 48px;
   --space-3xl: 64px;
-  --text-sm: 0.8125rem;
-  --text-base: 0.9375rem;
+  --space-section: clamp(32px, 5vw, 64px);
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
   --text-lg: 1.125rem;
   --text-xl: 1.5rem;
-  --text-display: clamp(2.2rem, 3vw, 3.5rem);
-  --text-hero: clamp(2.75rem, 5vw, 5.25rem);
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 16px;
+  --text-label: 0.75rem;
+  --text-display: clamp(2rem, 3.4vw, 3.5rem);
+  --text-hero: clamp(2.75rem, 5.5vw, 5rem);
+  --text-title: clamp(1.7rem, 2.6vw, 2.4rem);
+  --text-section: clamp(1.2rem, 1.8vw, 1.6rem);
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
   --radius-round: 50%;
+  --radius-pill: 999px;
   --rule-thin: 1px;
+  --rule-focus: 2px;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --dur-fast: 120ms;
-}
-
-/* Hallmark · genre: editorial · macrostructure: Workbench / Catalogue · design-system: design.md · designed-as-app */
-:root {
-  --text-title: clamp(1.75rem, 2.5vw, 2.5rem);
-  --text-section: clamp(1.25rem, 1.8vw, 1.65rem);
-  --text-label: 0.75rem;
-  --space-2xs: 2px;
-  --space-section: clamp(32px, 5vw, 64px);
-  --radius-pill: 999px;
-  --rule-focus: 2px;
   --dur-short: 150ms;
-  --color-accent-soft: oklch(94% 0.022 340);
-  --color-shadow: oklch(29% 0.025 335 / 0.08);
 }

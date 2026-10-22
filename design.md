@@ -1,57 +1,61 @@
 # Design — Lavía
 
-Sistema visual compartido, aprobado el 21 de octubre de 2026. Ampliar este documento antes de introducir variantes. Preservar los textos y las fotografías publicados por cada salón.
+Sistema actualizado el 22 de octubre de 2026 por petición expresa de una identidad distinta al proyecto Viajes. Se conserva el contenido de los salones y los recorridos de negocio. Todas las pantallas comparten el mismo sistema.
 
 ## Género y estructura
 
-Editorial funcional, tema Atelier existente. Gestión y administración: Workbench con cabecera compacta, una tarea y un h1 por pantalla. Portal público: Catalogue fotográfico. Reservas: formulario secuencial, resumen del servicio y controles antes que introducciones. La navegación lateral de escritorio pasa a menú desplegable con nombres en móvil. Pie discreto, sin eslóganes en las pantallas de trabajo.
+Modern-minimal, Coral adaptado a Lavía. Portal: Cover + service index, fotografía de portada amplia y panel de texto superpuesto en escritorio, apilado en móvil; categorías como índice circular, servicios en filas fotográficas. Gestión: Studio console con navegación carbón separada del lienzo, métricas compactas, listas de entidades y formularios en superficies claras. Reservas: resumen y panel operativo por pasos. Acceso: formulario a la izquierda y composición de oficio a la derecha. Administración: controles de plan y acceso por salón.
 
 ## Tema y tipografía
 
-`tokens.css` es la fuente de verdad. Papel cálido `oklch(97% 0.012 75)`, superficie `oklch(99% 0.006 75)`, tinta `oklch(29% 0.025 335)`, acento ciruela `oklch(39% 0.065 340)`. Colores funcionales de éxito/error solo para estados. Fraunces Variable, peso 450 y estilo normal para títulos; IBM Plex Sans 400/500/600 para controles y contenido. Nunca cursiva en titulares. Gestión usa escala compacta; portada pública conserva escala editorial.
+`tokens.css` es la fuente de verdad. Papel frío casi blanco, superficie blanca, tinta carbón, coral oscuro en foco y selección. Primarios carbón con texto claro; contextos oscuros invierten superficies. Manrope Variable 600–800 para marca y títulos; DM Sans Variable 400–600 para contenido y controles. Fuentes locales y titulares normales, sin serif ni cursiva. El cambio de identidad incluye composición, fotografías, navegación, proporciones y controles.
 
 ## Espacios y controles
 
-Escala de 4 puntos en tokens. Formularios y tablas con ancho limitado para lectura. Controles de al menos 44 px, 48 px para puntero táctil. Botones y enlaces de acción en una línea; los grupos se reorganizan. Nombres y contenido arbitrario pueden envolver sin recortar información. Cada pantalla tiene una acción principal y ayudas junto a su campo. Un único h1; no repetir el salón en el título si ya figura en el selector.
+Escala de 4 puntos; controles de 44 px como mínimo y 48 px táctiles. Botones redondeados, campos de radio 10 px, paneles de 16–24 px. Foco inmediato. Grillas `minmax(0,1fr)`, texto arbitrario envolvente y controles en una línea. Colores de estados acompañados de texto. Un h1 y una acción principal por pantalla. Los nombres del menú siempre accesibles.
 
-## Voz y estados
+## Contenido y estados
 
-Títulos directos: Agenda, Servicios, Clientes, Equipo, Página de clientes, Mi salón y Salones. Las cifras solo proceden de datos reales. No confundir valor de servicios completados con cobros. No modificar contenido propio de los salones para adoptar el nuevo tono. Confirmación breve al guardar; error con acción para reintentar; carga y estados vacíos explican el siguiente paso. Consentimientos explícitos se mantienen junto a la acción correspondiente. Los detalles secundarios pueden usar disclosures accesibles.
+Los textos y fotos personalizados del salón se respetan. No inventar métricas, testimonios ni servicios; distinguir valor de servicios completados de cobros. Mantener consentimiento junto a la operación y detalles de privacidad accesibles. Los estados de acceso, carga, error y vacío utilizan el mismo sistema en gestión, portal y plataforma.
 
-## Movimiento y accesibilidad
+## Movimiento y responsividad
 
-Sin animación decorativa ni nuevas dependencias. Solo transform/opacity para respuesta táctil, con los easings existentes; movimiento reducido sin transiciones. Foco visible inmediato, estados seleccionados también mediante aria, labels explícitos, navegación por teclado y cierre del menú al navegar. Contraste mínimo WCAG AA. Ningún control importante depende de hover.
-
-## Responsividad
-
-Verificar 320, 375, 414, 768 y 1440 px, contenido largo, diálogos y zoom. Grillas con `minmax(0, 1fr)`, mínimo 0 en hijos, `overflow-x: clip` en raíces. Cabeceras se apilan, sin esconder información para disimular errores. En móvil las tarjetas de servicios usan imagen lateral y descripción debajo; selección persistente de reserva sin tapar controles. Horarios agrupados por tramo local de la sede sin quitar horas disponibles.
+Sin animación decorativa, carruseles o nuevas dependencias de movimiento. Solo respuesta de transform/opacity; reduced-motion desactiva desplazamientos. Contraste AA y comprobaciones a 320, 375, 414, 768 y 1440 px, con diálogos, contenido largo y navegación por teclado.
 
 ## Exports
 
-Exportaciones del sistema; la aplicación consume directamente `tokens.css`. Las fuentes se sirven localmente mediante los paquetes Fontsource existentes.
+La aplicación consume `tokens.css`; las fuentes se sirven localmente.
 
 ### tokens.css
 ```css
 :root {
-  --color-paper: oklch(97% 0.012 75);
-  --color-surface: oklch(99% 0.006 75);
-  --color-paper-2: oklch(94% 0.018 65);
-  --color-ink: oklch(29% 0.025 335);
-  --color-muted: oklch(48% 0.025 335);
-  --color-rule: oklch(86% 0.014 65);
-  --color-accent: oklch(39% 0.065 340);
-  --color-accent-ink: oklch(98% 0.006 75);
-  --color-focus: oklch(65.42% .13 55);
+  --color-paper: oklch(97.5% 0.004 250);
+  --color-surface: oklch(100% 0 0);
+  --color-paper-2: oklch(94% 0.005 250);
+  --color-ink: oklch(22% 0.01 260);
+  --color-muted: oklch(45% 0.015 260);
+  --color-rule: oklch(86% 0.008 250);
+  --color-control-rule: oklch(64% 0.012 250);
+  --color-accent: oklch(48% 0.16 28);
+  --color-accent-ink: oklch(100% 0 0);
+  --color-accent-soft: oklch(95% 0.025 28);
+  --color-focus: oklch(52% 0.17 28);
   --color-error: oklch(43% 0.17 25);
-  --color-success: oklch(38% 0.06 150);
-  --color-sage: oklch(91% 0.032 145);
-  --color-clay: oklch(92% 0.036 40);
-  --color-plum: oklch(91% 0.025 335);
-  --color-ochre: oklch(93% 0.05 85);
-  --color-backdrop: oklch(20% 0.02 335 / 0.35);
+  --color-success: oklch(37% 0.07 158);
+  --color-sage: oklch(94% 0.025 158);
+  --color-clay: oklch(95% 0.03 40);
+  --color-plum: oklch(95% 0.022 310);
+  --color-ochre: oklch(95% 0.04 85);
+  --color-backdrop: oklch(18% 0.01 260 / 0.5);
   --color-transparent: transparent;
-  --font-display: "Fraunces Variable", serif;
-  --font-body: "IBM Plex Sans", sans-serif;
+  --color-shadow: oklch(22% 0.01 260 / 0.06);
+  --color-inverse: oklch(98% 0.004 250);
+  --color-inverse-muted: oklch(80% 0.01 250);
+  --color-inverse-rule: oklch(40% 0.01 260);
+  --color-inverse-surface: oklch(30% 0.012 260);
+  --font-display: "Manrope Variable", sans-serif;
+  --font-body: "DM Sans Variable", sans-serif;
+  --space-2xs: 2px;
   --space-xs: 4px;
   --space-sm: 8px;
   --space-md: 16px;
@@ -59,56 +63,61 @@ Exportaciones del sistema; la aplicación consume directamente `tokens.css`. Las
   --space-xl: 32px;
   --space-2xl: 48px;
   --space-3xl: 64px;
-  --text-sm: 0.8125rem;
-  --text-base: 0.9375rem;
+  --space-section: clamp(32px, 5vw, 64px);
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
   --text-lg: 1.125rem;
   --text-xl: 1.5rem;
-  --text-display: clamp(2.2rem, 3vw, 3.5rem);
-  --text-hero: clamp(2.75rem, 5vw, 5.25rem);
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 16px;
+  --text-label: 0.75rem;
+  --text-display: clamp(2rem, 3.4vw, 3.5rem);
+  --text-hero: clamp(2.75rem, 5.5vw, 5rem);
+  --text-title: clamp(1.7rem, 2.6vw, 2.4rem);
+  --text-section: clamp(1.2rem, 1.8vw, 1.6rem);
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
   --radius-round: 50%;
+  --radius-pill: 999px;
   --rule-thin: 1px;
+  --rule-focus: 2px;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --dur-fast: 120ms;
-  --text-title: clamp(1.75rem, 2.5vw, 2.5rem);
-  --text-section: clamp(1.25rem, 1.8vw, 1.65rem);
-  --text-label: 0.75rem;
-  --space-2xs: 2px;
-  --space-section: clamp(32px, 5vw, 64px);
-  --radius-pill: 999px;
-  --rule-focus: 2px;
   --dur-short: 150ms;
-  --color-accent-soft: oklch(94% 0.022 340);
-  --color-shadow: oklch(29% 0.025 335 / 0.08);
 }
 ```
 
 ### Tailwind v4 @theme
 ```css
 @theme {
-  --color-paper: oklch(97% 0.012 75);
-  --color-surface: oklch(99% 0.006 75);
-  --color-paper-2: oklch(94% 0.018 65);
-  --color-ink: oklch(29% 0.025 335);
-  --color-muted: oklch(48% 0.025 335);
-  --color-rule: oklch(86% 0.014 65);
-  --color-accent: oklch(39% 0.065 340);
-  --color-accent-ink: oklch(98% 0.006 75);
-  --color-focus: oklch(65.42% .13 55);
+  --color-paper: oklch(97.5% 0.004 250);
+  --color-surface: oklch(100% 0 0);
+  --color-paper-2: oklch(94% 0.005 250);
+  --color-ink: oklch(22% 0.01 260);
+  --color-muted: oklch(45% 0.015 260);
+  --color-rule: oklch(86% 0.008 250);
+  --color-control-rule: oklch(64% 0.012 250);
+  --color-accent: oklch(48% 0.16 28);
+  --color-accent-ink: oklch(100% 0 0);
+  --color-accent-soft: oklch(95% 0.025 28);
+  --color-focus: oklch(52% 0.17 28);
   --color-error: oklch(43% 0.17 25);
-  --color-success: oklch(38% 0.06 150);
-  --color-sage: oklch(91% 0.032 145);
-  --color-clay: oklch(92% 0.036 40);
-  --color-plum: oklch(91% 0.025 335);
-  --color-ochre: oklch(93% 0.05 85);
-  --color-backdrop: oklch(20% 0.02 335 / 0.35);
+  --color-success: oklch(37% 0.07 158);
+  --color-sage: oklch(94% 0.025 158);
+  --color-clay: oklch(95% 0.03 40);
+  --color-plum: oklch(95% 0.022 310);
+  --color-ochre: oklch(95% 0.04 85);
+  --color-backdrop: oklch(18% 0.01 260 / 0.5);
   --color-transparent: transparent;
-  --font-display: "Fraunces Variable", serif;
-  --font-body: "IBM Plex Sans", sans-serif;
+  --color-shadow: oklch(22% 0.01 260 / 0.06);
+  --color-inverse: oklch(98% 0.004 250);
+  --color-inverse-muted: oklch(80% 0.01 250);
+  --color-inverse-rule: oklch(40% 0.01 260);
+  --color-inverse-surface: oklch(30% 0.012 260);
+  --font-display: "Manrope Variable", sans-serif;
+  --font-body: "DM Sans Variable", sans-serif;
+  --spacing-2xs: 2px;
   --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 16px;
@@ -116,31 +125,28 @@ Exportaciones del sistema; la aplicación consume directamente `tokens.css`. Las
   --spacing-xl: 32px;
   --spacing-2xl: 48px;
   --spacing-3xl: 64px;
-  --text-sm: 0.8125rem;
-  --text-base: 0.9375rem;
+  --spacing-section: clamp(32px, 5vw, 64px);
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
   --text-lg: 1.125rem;
   --text-xl: 1.5rem;
-  --text-display: clamp(2.2rem, 3vw, 3.5rem);
-  --text-hero: clamp(2.75rem, 5vw, 5.25rem);
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 16px;
+  --text-label: 0.75rem;
+  --text-display: clamp(2rem, 3.4vw, 3.5rem);
+  --text-hero: clamp(2.75rem, 5.5vw, 5rem);
+  --text-title: clamp(1.7rem, 2.6vw, 2.4rem);
+  --text-section: clamp(1.2rem, 1.8vw, 1.6rem);
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
   --radius-round: 50%;
+  --radius-pill: 999px;
   --rule-thin: 1px;
+  --rule-focus: 2px;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --dur-fast: 120ms;
-  --text-title: clamp(1.75rem, 2.5vw, 2.5rem);
-  --text-section: clamp(1.25rem, 1.8vw, 1.65rem);
-  --text-label: 0.75rem;
-  --spacing-2xs: 2px;
-  --spacing-section: clamp(32px, 5vw, 64px);
-  --radius-pill: 999px;
-  --rule-focus: 2px;
   --dur-short: 150ms;
-  --color-accent-soft: oklch(94% 0.022 340);
-  --color-shadow: oklch(29% 0.025 335 / 0.08);
 }
 ```
 
@@ -149,39 +155,47 @@ Exportaciones del sistema; la aplicación consume directamente `tokens.css`. Las
 {
   "color": {
     "paper": {
-      "$value": "oklch(97% 0.012 75)",
+      "$value": "oklch(97.5% 0.004 250)",
       "$type": "color"
     },
     "surface": {
-      "$value": "oklch(99% 0.006 75)",
+      "$value": "oklch(100% 0 0)",
       "$type": "color"
     },
     "paper-2": {
-      "$value": "oklch(94% 0.018 65)",
+      "$value": "oklch(94% 0.005 250)",
       "$type": "color"
     },
     "ink": {
-      "$value": "oklch(29% 0.025 335)",
+      "$value": "oklch(22% 0.01 260)",
       "$type": "color"
     },
     "muted": {
-      "$value": "oklch(48% 0.025 335)",
+      "$value": "oklch(45% 0.015 260)",
       "$type": "color"
     },
     "rule": {
-      "$value": "oklch(86% 0.014 65)",
+      "$value": "oklch(86% 0.008 250)",
+      "$type": "color"
+    },
+    "control-rule": {
+      "$value": "oklch(64% 0.012 250)",
       "$type": "color"
     },
     "accent": {
-      "$value": "oklch(39% 0.065 340)",
+      "$value": "oklch(48% 0.16 28)",
       "$type": "color"
     },
     "accent-ink": {
-      "$value": "oklch(98% 0.006 75)",
+      "$value": "oklch(100% 0 0)",
+      "$type": "color"
+    },
+    "accent-soft": {
+      "$value": "oklch(95% 0.025 28)",
       "$type": "color"
     },
     "focus": {
-      "$value": "oklch(65.42% .13 55)",
+      "$value": "oklch(52% 0.17 28)",
       "$type": "color"
     },
     "error": {
@@ -189,53 +203,69 @@ Exportaciones del sistema; la aplicación consume directamente `tokens.css`. Las
       "$type": "color"
     },
     "success": {
-      "$value": "oklch(38% 0.06 150)",
+      "$value": "oklch(37% 0.07 158)",
       "$type": "color"
     },
     "sage": {
-      "$value": "oklch(91% 0.032 145)",
+      "$value": "oklch(94% 0.025 158)",
       "$type": "color"
     },
     "clay": {
-      "$value": "oklch(92% 0.036 40)",
+      "$value": "oklch(95% 0.03 40)",
       "$type": "color"
     },
     "plum": {
-      "$value": "oklch(91% 0.025 335)",
+      "$value": "oklch(95% 0.022 310)",
       "$type": "color"
     },
     "ochre": {
-      "$value": "oklch(93% 0.05 85)",
+      "$value": "oklch(95% 0.04 85)",
       "$type": "color"
     },
     "backdrop": {
-      "$value": "oklch(20% 0.02 335 / 0.35)",
+      "$value": "oklch(18% 0.01 260 / 0.5)",
       "$type": "color"
     },
     "transparent": {
       "$value": "transparent",
       "$type": "color"
     },
-    "accent-soft": {
-      "$value": "oklch(94% 0.022 340)",
+    "shadow": {
+      "$value": "oklch(22% 0.01 260 / 0.06)",
       "$type": "color"
     },
-    "shadow": {
-      "$value": "oklch(29% 0.025 335 / 0.08)",
+    "inverse": {
+      "$value": "oklch(98% 0.004 250)",
+      "$type": "color"
+    },
+    "inverse-muted": {
+      "$value": "oklch(80% 0.01 250)",
+      "$type": "color"
+    },
+    "inverse-rule": {
+      "$value": "oklch(40% 0.01 260)",
+      "$type": "color"
+    },
+    "inverse-surface": {
+      "$value": "oklch(30% 0.012 260)",
       "$type": "color"
     }
   },
   "font": {
     "display": {
-      "$value": "\"Fraunces Variable\", serif",
+      "$value": "\"Manrope Variable\", sans-serif",
       "$type": "fontFamily"
     },
     "body": {
-      "$value": "\"IBM Plex Sans\", sans-serif",
+      "$value": "\"DM Sans Variable\", sans-serif",
       "$type": "fontFamily"
     }
   },
   "space": {
+    "2xs": {
+      "$value": "2px",
+      "$type": "dimension"
+    },
     "xs": {
       "$value": "4px",
       "$type": "dimension"
@@ -264,10 +294,6 @@ Exportaciones del sistema; la aplicación consume directamente `tokens.css`. Las
       "$value": "64px",
       "$type": "dimension"
     },
-    "2xs": {
-      "$value": "2px",
-      "$type": "dimension"
-    },
     "section": {
       "$value": "clamp(32px, 5vw, 64px)",
       "$type": "dimension"
@@ -275,11 +301,11 @@ Exportaciones del sistema; la aplicación consume directamente `tokens.css`. Las
   },
   "text": {
     "sm": {
-      "$value": "0.8125rem",
+      "$value": "0.875rem",
       "$type": "dimension"
     },
     "base": {
-      "$value": "0.9375rem",
+      "$value": "1rem",
       "$type": "dimension"
     },
     "lg": {
@@ -290,38 +316,38 @@ Exportaciones del sistema; la aplicación consume directamente `tokens.css`. Las
       "$value": "1.5rem",
       "$type": "dimension"
     },
+    "label": {
+      "$value": "0.75rem",
+      "$type": "dimension"
+    },
     "display": {
-      "$value": "clamp(2.2rem, 3vw, 3.5rem)",
+      "$value": "clamp(2rem, 3.4vw, 3.5rem)",
       "$type": "dimension"
     },
     "hero": {
-      "$value": "clamp(2.75rem, 5vw, 5.25rem)",
+      "$value": "clamp(2.75rem, 5.5vw, 5rem)",
       "$type": "dimension"
     },
     "title": {
-      "$value": "clamp(1.75rem, 2.5vw, 2.5rem)",
+      "$value": "clamp(1.7rem, 2.6vw, 2.4rem)",
       "$type": "dimension"
     },
     "section": {
-      "$value": "clamp(1.25rem, 1.8vw, 1.65rem)",
-      "$type": "dimension"
-    },
-    "label": {
-      "$value": "0.75rem",
+      "$value": "clamp(1.2rem, 1.8vw, 1.6rem)",
       "$type": "dimension"
     }
   },
   "radius": {
     "sm": {
-      "$value": "4px",
+      "$value": "10px",
       "$type": "dimension"
     },
     "md": {
-      "$value": "8px",
+      "$value": "16px",
       "$type": "dimension"
     },
     "lg": {
-      "$value": "16px",
+      "$value": "24px",
       "$type": "dimension"
     },
     "round": {
@@ -387,13 +413,13 @@ Exportaciones del sistema; la aplicación consume directamente `tokens.css`. Las
 
 ### shadcn/ui CSS variables
 
-Usar junto al bloque `:root` anterior.
+Usar junto al bloque de tokens.
 ```css
 :root {
-  --background: var(--color-paper); --foreground: var(--color-ink);
-  --primary: var(--color-accent); --primary-foreground: var(--color-accent-ink);
-  --muted: var(--color-paper-2); --muted-foreground: var(--color-muted);
-  --border: var(--color-rule); --input: var(--color-rule); --ring: var(--color-focus);
-  --radius: var(--radius-sm);
+ --background: var(--color-paper); --foreground: var(--color-ink);
+ --primary: var(--color-ink); --primary-foreground: var(--color-inverse);
+ --muted: var(--color-paper-2); --muted-foreground: var(--color-muted);
+ --border: var(--color-rule); --input: var(--color-control-rule); --ring: var(--color-focus);
+ --radius: var(--radius-sm);
 }
 ```

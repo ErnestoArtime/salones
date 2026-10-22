@@ -33,6 +33,7 @@ test('gestión: menú con nombres, encabezados únicos y diálogos en todos los 
 test('reservas: resumen compacto, horarios completos por tramo y texto largo',async({page})=>{
  test.setTimeout(60000);await page.goto('/booking/?salon='+demo.slug);
  for(const width of widths){await page.setViewportSize({width,height:900});await fit(page);}
+ expect(await page.locator('.salon-hero').evaluate(e=>e.getBoundingClientRect().height)).toBeLessThan(800);
  await page.getByRole('button',{name:/Elegir Corte y acabado/}).click();await page.getByRole('button',{name:'Elegir horario',exact:true}).click();
  const date=new Date();date.setDate(date.getDate()+3);await page.getByLabel('Fecha',{exact:true}).fill(date.toISOString().slice(0,10));
  await expect(page.locator('.slot').first()).toBeVisible();

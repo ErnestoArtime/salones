@@ -67,3 +67,21 @@ textarea { resize: vertical; }
 .copy-group { border-block-start: var(--rule-thin) solid var(--color-rule); }
 .copy-group summary { padding-block: var(--space-md); cursor: pointer; font-weight: 500; min-height: 48px; }
 .copy-group .editor-copy-fields { margin-top: 0; padding-top: var(--space-sm); border: 0; padding-bottom: var(--space-lg); }
+
+/* Hallmark · genre: modern-minimal · macrostructure: Studio console · design-system: design.md · designed-as-app */
+.editor-tabs { border: 0; padding: var(--space-xs); background: var(--color-surface); border-radius: var(--radius-md); }
+.editor-tabs .button { border-radius: var(--radius-sm); }
+.editor-tabs .button.primary { background: var(--color-ink); color: var(--color-inverse); border-color: var(--color-ink); }
+.editor-heading { margin-bottom: var(--space-lg); }
+.editor-form legend { font-family: var(--font-display); font-weight: 650; }
+.photo-field,.category-editor { border-radius: var(--radius-md); }
+.photo-field h2 { font-family: var(--font-display); }
+.photo-field img { border-radius: var(--radius-sm); }
+.rights { border-radius: var(--radius-sm); }
+.editor-copy-groups { padding: var(--space-lg); background: var(--color-surface); border: var(--rule-thin) solid var(--color-rule); border-radius: var(--radius-md); }
+.copy-group:first-child { border-top: 0; }
+.copy-group summary { font-family: var(--font-display); font-weight: 650; }
+.copy-group .editor-copy-fields { gap: var(--space-lg); }
+.editor-save { border: 0; background: var(--color-paper-2); padding: var(--space-lg); border-radius: var(--radius-md); }
+.media-library article { border: var(--rule-thin) solid var(--color-rule); border-radius: var(--radius-md); background: var(--color-surface); padding: var(--space-md); }
+.media-library img { border-radius: var(--radius-sm); }

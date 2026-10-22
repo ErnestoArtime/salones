@@ -1,5 +1,21 @@
 [
   {
+    "date": "2026-10-22",
+    "scope": "app",
+    "macrostructure": "Cover + service index / Studio console",
+    "theme": "Coral adapted for Lavía",
+    "enrichment": "Existing photography",
+    "brief": "Identidad propia distinta a Viajes, aplicada a todas las pantallas",
+    "critique": {
+      "P": 5,
+      "H": 5,
+      "E": 4,
+      "S": 5,
+      "R": 5,
+      "V": 5
+    }
+  },
+  {
     "date": "2026-10-21",
     "scope": "app",
     "macrostructure": "Workbench / Catalogue / sequential booking",

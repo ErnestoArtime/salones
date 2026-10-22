@@ -257,3 +257,104 @@
 @media (pointer:coarse) { .slot,.category-filter { min-height: 48px; } }
 
 .hero-cta .cta-label { min-width: 0; overflow: clip; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Hallmark · genre: modern-minimal · macrostructure: Cover + service index · theme: Coral / Lavía
+ * design-system: design.md · designed-as-app · pre-emit critique: P5 H5 E4 S5 R5 V5 */
+.public-salon { max-width: 1440px; padding: var(--space-md); }
+.public-salon .booking-header { padding-block: var(--space-sm) var(--space-lg); border: 0; }
+.public-salon .wordmark { font-family: var(--font-display); font-size: 2rem; font-weight: 800; }
+.brand-dot { color: var(--color-accent); }
+.public-nav .button { border-radius: var(--radius-pill); }
+.salon-hero { display: grid; grid-template-columns: minmax(0,1fr); gap: 0; border-radius: var(--radius-lg); background: var(--color-ink); overflow: clip; padding: 0; }
+.hero-photo { order: -1; margin: 0; height: 280px; aspect-ratio: auto; max-height: none; }
+.hero-photo img { object-position: center 40%; }
+.hero-photo figcaption { bottom: var(--space-md); right: var(--space-md); left: auto; max-width: calc(100% - 32px); border-radius: var(--radius-pill); padding: var(--space-sm) var(--space-md); font: 500 var(--text-sm)/1.5 var(--font-body); color: var(--color-ink); background: var(--color-surface); }
+.hero-copy { padding: var(--space-lg); background: var(--color-ink); color: var(--color-inverse); min-width: 0; }
+.hero-copy h1 { font: 650 clamp(2.5rem,8vw,4.8rem)/1.04 var(--font-display); letter-spacing: -.06em; margin-bottom: var(--space-lg); }
+.hero-copy h1.long-title { font-size: clamp(2rem,5vw,3.5rem); }
+.hero-copy .salon-name { color: var(--color-inverse-muted); margin-bottom: var(--space-lg); }
+.hero-copy > p:not(.salon-name) { color: var(--color-inverse-muted); font-size: var(--text-base); }
+.hero-cta { background: var(--color-surface); color: var(--color-ink); border-color: var(--color-surface); border-radius: var(--radius-pill); }
+.hero-note { color: var(--color-inverse-muted); font-size: var(--text-label); }
+.salon-hero.without-photo .hero-copy { max-width: none; }
+.experience-section { padding-block: var(--space-2xl) var(--space-xl); }
+.section-title h2 { font-family: var(--font-display); font-weight: 650; letter-spacing: -.045em; }
+.experience-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: var(--space-lg) var(--space-md); }
+.experience { display: grid; justify-items: start; align-content: start; }
+.experience-image { width: 88px; height: 88px; border-radius: var(--radius-round); aspect-ratio: 1; }
+.experience:last-child:nth-child(odd) .experience-image { aspect-ratio: 1; }
+.image-arrow { display: none; }
+.experience h3 { font-family: var(--font-display); font-size: var(--text-base); font-weight: 650; letter-spacing: -.025em; margin-top: var(--space-md); }
+.experience > p { margin-top: var(--space-xs); }
+.category-availability { color: var(--color-muted); }
+.booking-layout.catalog-layout { border-top: var(--rule-thin) solid var(--color-rule); padding-top: var(--space-xl); }
+.catalog-filters { border: 0; gap: var(--space-sm); }
+.category-filter { background: var(--color-surface); border-color: var(--color-rule); border-radius: var(--radius-pill); font-weight: 500; }
+.category-filter.active { background: var(--color-ink); border-color: var(--color-ink); color: var(--color-inverse); }
+.service-search input { border-color: var(--color-control-rule); border-radius: var(--radius-pill); padding-inline: var(--space-md); }
+.service-gallery { display: grid; grid-template-columns: minmax(0,1fr); gap: var(--space-sm); }
+.service-card { display: grid; grid-template-columns: 76px minmax(0,1fr); border-radius: var(--radius-md); padding: var(--space-sm); gap: var(--space-md); align-items: center; }
+.service-card > img,.service-no-photo { width: 76px; height: 100%; min-height: 132px; border-radius: var(--radius-sm); object-fit: cover; }
+.service-card-body { padding: var(--space-sm) var(--space-sm) var(--space-sm) 0; }
+.service-card h3 { font-family: var(--font-display); font-size: var(--text-base); font-weight: 650; }
+.service-category { color: var(--color-muted); }
+.service-description { font-size: var(--text-sm); }
+.service-card.is-selected { border-color: var(--color-accent); outline-color: var(--color-accent); }
+.service-card-bottom .button { border-radius: var(--radius-pill); padding-inline: var(--space-md); }
+.reservation-bar { background: var(--color-ink); color: var(--color-inverse); border: 0; border-radius: var(--radius-md); padding: var(--space-lg); }
+.reservation-bar span,.reservation-bar .quiet { color: var(--color-inverse-muted); }
+.reservation-bar .primary { background: var(--color-surface); color: var(--color-ink); border-color: var(--color-surface); }
+.reservation-bar .primary:disabled { opacity: .65; }
+.reservation-bar strong { font-family: var(--font-display); font-weight: 600; }
+.visit-section { background: var(--color-surface); border: 0; border-radius: var(--radius-lg); padding: var(--space-lg); margin-top: var(--space-xl); }
+.visit-section img { border-radius: var(--radius-md); }
+.visit-copy h2 { font-family: var(--font-display); font-weight: 650; letter-spacing: -.05em; font-size: clamp(1.9rem,4vw,3rem); }
+.public-salon .page-foot { margin-top: var(--space-xl); }
+.flow-layout .booking-intro { background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-lg); border: var(--rule-thin) solid var(--color-rule); }
+.flow-layout .booking-intro h1 { font-weight: 650; }
+.flow-layout .booking-flow { padding: var(--space-lg); border: var(--rule-thin) solid var(--color-rule); border-radius: var(--radius-md); background: var(--color-surface); }
+.flow-layout .booking-location { margin-top: var(--space-md); }
+.flow-layout .steps { gap: var(--space-sm); }
+.flow-layout .steps span.current { color: var(--color-accent); }
+.slot { border-radius: var(--radius-sm); border-color: var(--color-control-rule); }
+.slot.selected { background: var(--color-ink); color: var(--color-inverse); border-color: var(--color-ink); }
+.booking-summary { background: var(--color-paper); border-radius: var(--radius-md); }
+.flow-layout .slot-groups { gap: var(--space-lg); }
+@media (hover:hover) and (pointer:fine) {
+ .hero-cta:hover,.reservation-bar .primary:not(:disabled):hover { background: var(--color-accent-soft); color: var(--color-ink); border-color: var(--color-accent-soft); }
+}
+@media (min-width:40rem) {
+ .public-salon { padding: var(--space-lg) var(--space-xl); }
+ .salon-hero { grid-template-columns: minmax(0,1fr); }
+ .hero-photo { height: 360px; }
+ .hero-copy { padding: var(--space-xl); }
+ .experience-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+ .service-card { grid-template-columns: 96px minmax(0,1fr); padding: var(--space-md); gap: var(--space-lg); }
+ .service-card > img,.service-no-photo { width: 96px; min-height: 120px; }
+ .service-card-body { padding: 0; }
+ .service-card-bottom { gap: var(--space-lg); }
+ .visit-section { padding: var(--space-xl); }
+}
+@media (min-width:64rem) {
+ .public-salon { padding-inline: var(--space-2xl); }
+ .salon-hero { position: relative; min-height: 560px; }
+ .hero-photo { grid-area: 1/1; height: 100%; min-height: 560px; max-height: none; }
+ .hero-photo img { object-position: center 43%; }
+ .hero-copy { grid-area: 1/1; z-index: 1; margin: var(--space-xl); padding: var(--space-xl); max-width: 52%; align-self: center; border-radius: var(--radius-md); }
+ .hero-photo figcaption { max-width: 34%; }
+ .hero-copy h1 { font-size: clamp(2.8rem,4.5vw,4.5rem); }
+ .salon-hero.without-photo { min-height: 0; }
+ .salon-hero.without-photo .hero-copy { max-width: 840px; margin: 0; }
+ .experience-grid { grid-template-columns: repeat(5,minmax(0,1fr)); }
+ .experience { grid-template-columns: minmax(0,1fr); }
+ .experience-image { width: 104px; height: 104px; }
+ .catalog-layout { max-width: 100%; }
+ .service-gallery { grid-template-columns: repeat(2,minmax(0,1fr)); gap: var(--space-md); }
+ .visit-section { gap: var(--space-2xl); padding: var(--space-xl); }
+ .flow-layout { gap: var(--space-lg); grid-template-columns: minmax(0,.8fr) minmax(0,1.2fr); }
+ .flow-layout .booking-intro { padding: var(--space-xl); }
+ .flow-layout .booking-intro h1 { font-size: var(--text-title); }
+}
+@media (min-width:64rem) {
+ .salon-hero .hero-photo { position: absolute; inset: 0; height: 100%; min-height: 0; }
+}

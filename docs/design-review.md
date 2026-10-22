@@ -1,8 +1,8 @@
 # Rediseño de Lavía — octubre de 2026
 
-Identidad Atelier existente, Fraunces + IBM Plex Sans y paleta cálida/ciruela. Sistema compartido en `design.md` y tokens comunes; sin cambios de esquema ni sustitución de textos/fotos publicados por los salones.
+Identidad vigente: Manrope + DM Sans, lienzo frío, superficies carbón y acentos coral; especificación compartida en `design.md`. A continuación se conserva el historial del refinamiento inicial y su sustitución por la identidad del 22 de octubre. Sin cambios de esquema ni sustitución de textos/fotos de los salones.
 
-## Cambios
+## Refinamiento del 21 de octubre
 
 - Gestión: menú móvil desplegable con nombres e iconos diferenciados, estado activo, cierre con Escape y foco al título al navegar. Agenda primero en la navegación; cabeceras y resumen más compactos. Roles traducidos.
 - Editor público: un único encabezado, textos divididos en portada, catálogo y visita; bloques desplegables accesibles y controles consistentes. Se mantienen derechos de publicación, categorías y biblioteca privadas.
@@ -26,3 +26,9 @@ TEST_WEB_URL=https://lavia.eav-labs.com pnpm run test:e2e
 Revisión Hallmark: P5 H5 E4 S5 R5 V4. Coherencia entre páginas sobre variación del tema, sin métricas inventadas, sin adornos nuevos, sin tipografía en cursiva, colores/fuentes de tokens, foco visible y grillas acotadas. Comprobaciones de contraste de texto automatizadas sobre acceso, agenda y catálogo; no sustituyen una auditoría completa de accesibilidad ni pruebas en dispositivos físicos.
 
 Capturas y mediciones privadas previas en `.local/design-audit/`; revisión posterior en `.local/design-after/`. Publicación mediante el supervisor existente de `main`, con respaldo previo y los mismos volúmenes.
+
+## Nueva identidad — 22 de octubre de 2026
+
+Por petición del usuario se sustituye la identidad compartida con Viajes: Manrope y DM Sans locales, lienzo frío, navegación carbón, controles redondeados y acentos coral. Portada pública de fotografía amplia con texto superpuesto, categorías circulares e índice de servicios. Se aplica a gestión, acceso/alta/recuperación, agenda y vistas alternativas, clientes, servicios, equipo, editor, estudio virtual, reserva/cancelación y plataforma; también a diálogos, vacíos y formularios.
+
+Hallmark 1.1.0 verificado contra el repositorio oficial; texto instalado idéntico al upstream. Revisión y commit de referencia en `.hallmark/preflight.json`. El esquema de datos, permisos, fotografías y textos personalizados se conservan. Los exports de `design.md` se actualizan al nuevo sistema. Las capturas privadas de la ronda de revisión se regeneran en `.local/design-after/`.
