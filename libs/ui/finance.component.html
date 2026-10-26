@@ -1,0 +1,463 @@
+<section class="finance" aria-label="Caja y comisiones">
+  <p class="muted finance-intro">
+    Registra los pagos recibidos y comprueba el efectivo de cada sede.
+  </p>
+  <div class="finance-scope">
+    <label
+      >Sede<select
+        [(ngModel)]="branchId"
+        (ngModelChange)="changeScope()"
+        [disabled]="busy()"
+      >
+        @for (b of workspace().branches; track b.id) {
+          <option [value]="b.id">{{ b.name }}</option>
+        }
+      </select></label
+    >
+    <label
+      >Moneda<select
+        [(ngModel)]="currency"
+        (ngModelChange)="changeScope()"
+        [disabled]="busy()"
+      >
+        @for (c of currencies(); track c) {
+          <option [value]="c">{{ c }}</option>
+        }
+      </select></label
+    >
+    <label
+      >Día de caja<input
+        type="date"
+        [(ngModel)]="date"
+        (ngModelChange)="changeScope()"
+        [disabled]="busy()"
+    /></label>
+  </div>
+  <div
+    class="finance-tabs segmented"
+    role="group"
+    aria-label="Secciones de caja"
+  >
+    <button
+      [class.active]="tab() === 'day'"
+      [attr.aria-pressed]="tab() === 'day'"
+      (click)="tab.set('day')"
+    >
+      Movimientos
+    </button>
+    @if (manage()) {
+      <button
+        [class.active]="tab() === 'commissions'"
+        [attr.aria-pressed]="tab() === 'commissions'"
+        (click)="tab.set('commissions')"
+      >
+        Comisiones
+      </button>
+    }
+    <button
+      [class.active]="tab() === 'history'"
+      [attr.aria-pressed]="tab() === 'history'"
+      (click)="tab.set('history')"
+    >
+      Cierres
+    </button>
+  </div>
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+  }
+  @if (notice()) {
+    <p class="status-message" role="status">{{ notice() }}</p>
+  }
+  @if (loading()) {
+    <p role="status">Cargando caja…</p>
+  } @else if (state(); as s) {
+    @if (tab() === "day") {
+      <div class="finance-summary">
+        <div>
+          <span>Cobros</span><strong>{{ money(received(), currency) }}</strong>
+        </div>
+        <div>
+          <span>Devoluciones</span
+          ><strong>{{ money(refunded(), currency) }}</strong>
+        </div>
+        <div>
+          <span>Cobrado neto</span
+          ><strong>{{ money(received() - refunded(), currency) }}</strong>
+        </div>
+        <div>
+          <span>Efectivo esperado</span
+          ><strong>{{ money(expected(), currency) }}</strong>
+        </div>
+      </div>
+      @if (!s.day) {
+        @if (date === s.today) {
+          <section class="finance-panel">
+            <h2>Abrir caja</h2>
+            <p class="muted">
+              Cuenta el efectivo inicial. No se registra como ingreso.
+            </p>
+            <form class="finance-inline" (ngSubmit)="open()">
+              <label
+                >Efectivo inicial<input
+                  name="opening"
+                  type="number"
+                  min="0"
+                  max="1000000"
+                  step="0.01"
+                  [(ngModel)]="opening"
+                  required /></label
+              ><button class="button primary" [disabled]="busy()">
+                Abrir caja
+              </button>
+            </form>
+          </section>
+        } @else {
+          <div class="empty">
+            <h2>No hay caja para este día</h2>
+            <p>Selecciona hoy para abrir una nueva o consulta otra fecha.</p>
+          </div>
+        }
+      } @else {
+        <div class="finance-day-status">
+          <span class="badge">{{
+            s.day.status === "open" ? "Caja abierta" : "Caja cerrada"
+          }}</span
+          ><span class="quiet"
+            >Apertura: {{ money(s.day.opening_cents, currency) }} ·
+            {{ s.timezone }}</span
+          ><a class="button" [href]="exportUrl()"
+            >Exportar CSV<lv-icon name="arrow"
+          /></a>
+        </div>
+        @if (openNow()) {
+          <section class="finance-panel" id="finance-record">
+            <h2>{{ kindLabel(mode) }}</h2>
+            @if (manage()) {
+              <div class="row finance-modes">
+                <button
+                  class="text-button"
+                  [disabled]="busy()"
+                  (click)="clear()"
+                >
+                  Cobrar cita</button
+                ><button
+                  class="text-button"
+                  [disabled]="busy()"
+                  (click)="clear(); mode = 'cash_in'"
+                >
+                  Entrada</button
+                ><button
+                  class="text-button"
+                  [disabled]="busy()"
+                  (click)="clear(); mode = 'cash_out'"
+                >
+                  Salida
+                </button>
+              </div>
+            }
+            <form class="finance-form" (ngSubmit)="record()">
+              @if (mode === "payment") {
+                <label class="span-all"
+                  >Cita completada<select
+                    name="appointment"
+                    [(ngModel)]="appointmentId"
+                    (ngModelChange)="chooseAppointment()"
+                    required
+                  >
+                    <option value="">Elige una cita pendiente</option>
+                    @for (a of s.pending; track a.id) {
+                      <option [value]="a.id">
+                        {{ a.customer_name }} · {{ dateLabel(a.starts_at) }} ·
+                        {{ a.service_name }} ·
+                        {{ money(a.due_cents, currency) }}
+                      </option>
+                    }
+                  </select></label
+                >
+                @if (!s.pending.length) {
+                  <p class="quiet span-all">
+                    No hay citas completadas pendientes de cobro en esta sede y
+                    moneda.
+                  </p>
+                }
+              }
+              @if (mode === "refund") {
+                <p class="span-all quiet">
+                  Devolución del cobro de {{ refundEntry?.customer_name }} ·
+                  {{ refundEntry?.service_name }}. Se registra en la caja de
+                  hoy.
+                </p>
+              }
+              @if (mode === "commission_payout") {
+                <p class="span-all quiet">
+                  Pago a {{ payoutName() }}. Quedará descontado de su saldo de
+                  comisiones.
+                </p>
+              }
+              <label
+                >Importe<input
+                  name="amount"
+                  type="number"
+                  min="0.01"
+                  max="1000000"
+                  step="0.01"
+                  [(ngModel)]="amount"
+                  required
+              /></label>
+              <label
+                >Método de pago<select
+                  name="method"
+                  [(ngModel)]="method"
+                  [disabled]="
+                    mode === 'cash_in' ||
+                    mode === 'cash_out' ||
+                    mode === 'refund'
+                  "
+                >
+                  <option value="cash">Efectivo</option>
+                  <option value="card">Tarjeta</option>
+                  <option value="transfer">Transferencia</option>
+                  <option value="other">Otro</option>
+                </select></label
+              >
+              <label class="span-all"
+                >{{
+                  mode === "payment"
+                    ? "Nota · opcional"
+                    : "Motivo o referencia"
+                }}<input
+                  name="note"
+                  [(ngModel)]="note"
+                  maxlength="500"
+                  [required]="mode !== 'payment'"
+              /></label>
+              <button
+                class="button primary"
+                [disabled]="busy() || (mode === 'payment' && !appointmentId)"
+              >
+                {{ busy() ? "Guardando…" : "Registrar movimiento" }}
+              </button>
+            </form>
+          </section>
+        } @else if (s.day.status === "open") {
+          <p class="quiet">
+            Puedes cerrar esta caja pendiente. Los movimientos nuevos se
+            registran en la caja de hoy.
+          </p>
+        }
+        @if (s.day.status === "closed") {
+          <section class="finance-reconciliation">
+            <h2>Recuento guardado</h2>
+            <dl>
+              <div>
+                <dt>Esperado</dt>
+                <dd>{{ money(s.day.expected_cents, currency) }}</dd>
+              </div>
+              <div>
+                <dt>Contado</dt>
+                <dd>{{ money(s.day.counted_cents, currency) }}</dd>
+              </div>
+              <div>
+                <dt>Diferencia</dt>
+                <dd>{{ money(s.day.difference_cents, currency) }}</dd>
+              </div>
+            </dl>
+            @if (s.day.notes) {
+              <p class="quiet">{{ s.day.notes }}</p>
+            }
+          </section>
+        }
+        <section class="finance-ledger">
+          <div class="row spread">
+            <h2>Movimientos del día</h2>
+            <span class="quiet"
+              >Hasta {{ s.entry_limit }} movimientos en pantalla</span
+            >
+          </div>
+          @for (entry of s.entries; track entry.id) {
+            <article class="finance-entry">
+              <div>
+                <h3>
+                  {{ kindLabel(entry.kind) }} · {{ methodLabel(entry.method) }}
+                </h3>
+                <p>
+                  {{ entry.customer_name || entry.employee_name || entry.note }}
+                </p>
+                @if (entry.service_name) {
+                  <p class="quiet">{{ entry.service_name }}</p>
+                }
+                <p class="quiet">{{ dateLabel(entry.created_at) }}</p>
+                @if (
+                  entry.note && (entry.customer_name || entry.employee_name)
+                ) {
+                  <p class="quiet">{{ entry.note }}</p>
+                }
+              </div>
+              <div class="finance-entry-amount">
+                <strong
+                  >{{
+                    ["refund", "cash_out", "commission_payout"].includes(
+                      entry.kind
+                    )
+                      ? "−"
+                      : "+"
+                  }}{{ money(entry.amount_cents, currency) }}</strong
+                >
+                @if (
+                  manage() &&
+                  entry.kind === "payment" &&
+                  entry.refundable_cents > 0
+                ) {
+                  <button
+                    class="text-button"
+                    [disabled]="busy()"
+                    (click)="refund(entry)"
+                  >
+                    Devolver
+                  </button>
+                }
+              </div>
+            </article>
+          } @empty {
+            <p class="quiet">Todavía no hay movimientos en esta caja.</p>
+          }
+        </section>
+        <section class="finance-methods">
+          <h2>Por método de pago</h2>
+          @for (t of s.totals; track t.method) {
+            <div>
+              <strong>{{ methodLabel(t.method) }}</strong
+              ><span>Cobros {{ money(t.received_cents, currency) }}</span
+              ><span>Devoluciones {{ money(t.refunded_cents, currency) }}</span
+              ><span
+                >Comisiones pagadas
+                {{ money(t.paid_commissions_cents, currency) }}</span
+              >
+            </div>
+          } @empty {
+            <p class="quiet">
+              El desglose aparecerá al registrar un movimiento.
+            </p>
+          }
+        </section>
+        @if (manage() && s.day.status === "open") {
+          <section class="finance-panel">
+            <h2>Cerrar caja</h2>
+            <p class="muted">
+              Efectivo esperado: {{ money(expected(), currency) }}. Cuenta el
+              efectivo real antes de cerrar.
+            </p>
+            <form class="finance-form" (ngSubmit)="close()">
+              <label
+                >Efectivo contado<input
+                  name="counted"
+                  type="number"
+                  min="0"
+                  max="1000000"
+                  step="0.01"
+                  [(ngModel)]="counted"
+                  required /></label
+              ><label
+                >Notas del cierre<input
+                  name="closingNotes"
+                  [(ngModel)]="closingNotes"
+                  maxlength="500"
+                  placeholder="Explica cualquier diferencia" /></label
+              ><button class="button primary" [disabled]="busy()">
+                Cerrar caja
+              </button>
+            </form>
+            <p class="quiet">
+              El cierre conserva el recuento y bloquea nuevos movimientos de ese
+              día.
+            </p>
+          </section>
+        }
+      }
+    } @else if (tab() === "commissions") {
+      <p class="finance-intro muted">
+        El porcentaje se aplica a cada cobro futuro. Las devoluciones descuentan
+        la comisión original; los pagos quedan registrados por separado.
+      </p>
+      @for (e of s.rates; track e.id) {
+        <section class="finance-commission">
+          <div>
+            <h2>{{ e.name }}</h2>
+            <p class="quiet">
+              {{ e.active ? "Profesional activo" : "Profesional inactivo" }}
+            </p>
+          </div>
+          <dl>
+            <div>
+              <dt>Generadas netas</dt>
+              <dd>{{ money(e.earned_cents, currency) }}</dd>
+            </div>
+            <div>
+              <dt>Pagadas</dt>
+              <dd>{{ money(e.paid_cents, currency) }}</dd>
+            </div>
+            <div>
+              <dt>
+                {{ e.balance_cents < 0 ? "Saldo a compensar" : "Pendientes" }}
+              </dt>
+              <dd>{{ money(e.balance_cents, currency) }}</dd>
+            </div>
+          </dl>
+          <form class="finance-inline" (ngSubmit)="saveRate(e)">
+            <label
+              >Porcentaje de {{ e.name
+              }}<input
+                [name]="'rate-' + e.id"
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                [(ngModel)]="rateDrafts[e.id]"
+                required /></label
+            ><button class="button" [disabled]="busy()">
+              Guardar porcentaje</button
+            ><button
+              class="button primary"
+              type="button"
+              [disabled]="busy() || e.balance_cents <= 0"
+              (click)="payout(e)"
+            >
+              Registrar pago
+            </button>
+          </form>
+        </section>
+      } @empty {
+        <div class="empty">
+          <h2>Primero añade tu equipo</h2>
+          <p>
+            Los profesionales aparecerán aquí para configurar sus comisiones.
+          </p>
+        </div>
+      }
+    } @else {
+      <h2>Historial de cajas</h2>
+      <div class="finance-history">
+        @for (d of s.days; track d.id) {
+          <button
+            class="finance-history-row"
+            (click)="date = d.business_date; tab.set('day'); load()"
+          >
+            <strong>{{ d.business_date }}</strong
+            ><span>{{ d.status === "closed" ? "Cerrada" : "Abierta" }}</span>
+            @if (d.status === "closed") {
+              <span>Contado {{ money(d.counted_cents, d.currency) }}</span
+              ><span
+                >Diferencia {{ money(d.difference_cents, d.currency) }}</span
+              >
+            }
+            <lv-icon name="arrow" />
+          </button>
+        } @empty {
+          <p class="quiet">
+            Todavía no hay cajas abiertas en esta sede y moneda.
+          </p>
+        }
+      </div>
+    }
+  }
+</section>

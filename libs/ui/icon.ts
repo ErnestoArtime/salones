@@ -1,5 +1,6 @@
 import { Component, input, computed } from "@angular/core";
 const paths: Record<string, string> = {
+  wallet: "M20 8H5a2 2 0 0 1 0-4h13v4M4 8v12h17V8m-5 4h5v4h-5v-4",
   portrait: "M8 3H4v4m12-4h4v4M4 17v4h4m8 0h4v-4M16 10a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM6 20v-1a6 6 0 0 1 12 0v1",
   team: "M4 21v-3a5 5 0 0 1 10 0v3m2-7a4 4 0 0 1 4 4v3M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Zm4-3a3 3 0 0 1 0 6",
   calendar:

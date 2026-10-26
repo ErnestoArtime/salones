@@ -58,30 +58,151 @@ export class StudioController {
       ).rows;
       const jobs = (
         await db.query(
-          "SELECT j.id,j.hairstyle_id,j.portrait_asset_id,j.result_asset_id,j.customer_id,j.appointment_id,j.status,j.error,j.created_at,j.created_by,h.name,h.service_id,h.employee_id FROM salon.virtual_tryons j JOIN salon.hairstyles h ON h.id=j.hairstyle_id AND h.tenant_id=j.tenant_id JOIN salon.studio_assets a ON a.id=j.portrait_asset_id AND a.tenant_id=j.tenant_id WHERE j.tenant_id=$1 AND j.deleted_at IS NULL AND a.deleted_at IS NULL AND a.expires_at>now() AND ($2::boolean=false OR j.created_by=$3) ORDER BY j.created_at DESC LIMIT 50",
+          "SELECT j.id,j.hairstyle_id,j.portrait_asset_id,j.result_asset_id,j.customer_id,j.appointment_id,j.status,j.error,j.assessment,j.assessment_notes,j.assessed_at,j.created_at,j.created_by,h.name,h.service_id,h.employee_id FROM salon.virtual_tryons j JOIN salon.hairstyles h ON h.id=j.hairstyle_id AND h.tenant_id=j.tenant_id JOIN salon.studio_assets a ON a.id=j.portrait_asset_id AND a.tenant_id=j.tenant_id WHERE j.tenant_id=$1 AND j.deleted_at IS NULL AND a.deleted_at IS NULL AND a.expires_at>now() AND ($2::boolean=false OR j.created_by=$3) ORDER BY j.created_at DESC LIMIT 50",
           [tenant, own, user.id],
         )
       ).rows;
       const usage = (
         await db.query(
-          "SELECT count(*)::int AS total FROM salon.virtual_tryons WHERE tenant_id=$1 AND created_at>=date_trunc('month',now())",
+          "SELECT count(*)::int AS total FROM salon.virtual_tryons WHERE tenant_id=$1 AND created_at>=(date_trunc('month',now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC')",
           [tenant],
         )
       ).rows[0].total;
       const plan = (
         await db.query("SELECT plan FROM salon.tenants WHERE id=$1", [tenant])
       ).rows[0].plan;
+      const settings = (
+        await db.query(
+          "SELECT enabled,monthly_limit FROM salon.studio_settings WHERE tenant_id=$1",
+          [tenant],
+        )
+      ).rows[0] ?? { enabled: true, monthly_limit: 100 };
+      const planLimit =
+        plan === "studio" ? 100 : plan === "essential" ? 50 : 10;
+      const consumption = (
+        await db.query(
+          "SELECT status,count(*)::int AS count FROM salon.virtual_tryons WHERE tenant_id=$1 AND created_at>=(date_trunc('month',now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC') GROUP BY status",
+          [tenant],
+        )
+      ).rows;
       return {
         styles,
         jobs,
         usage,
-        limit: plan === "studio" ? 100 : plan === "essential" ? 50 : 10,
+        limit: Math.min(settings.monthly_limit, planLimit),
+        plan_limit: planLimit,
+        generation_enabled: settings.enabled,
+        consumption,
+        remaining: Math.max(
+          0,
+          Math.min(settings.monthly_limit, planLimit) - usage,
+        ),
         provider_ready: this.provider.enabled(),
         provider: "Replicate",
         model: this.provider.model,
         retention_hours: 72,
       };
     });
+  }
+  @Put("settings") async settings(
+    @Req() req: Request,
+    @Param("tenant") tenant: string,
+    @Body() body: unknown,
+  ) {
+    id.parse(tenant);
+    const input = z
+      .object({
+        enabled: z.boolean(),
+        monthly_limit: z.number().int().min(0).max(100),
+      })
+      .strict()
+      .parse(body);
+    const user = await this.auth.user(req);
+    return this.db.tenant(user, tenant, ["owner", "manager"], async (db) => {
+      await db.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))", [
+        "studio-quota:" + tenant,
+      ]);
+      const plan = (
+        await db.query("SELECT plan FROM salon.tenants WHERE id=$1", [tenant])
+      ).rows[0].plan;
+      const cap = plan === "studio" ? 100 : plan === "essential" ? 50 : 10;
+      if (input.monthly_limit > cap)
+        throw new BadRequestException(
+          "El límite no puede superar la cuota del plan.",
+        );
+      await db.query(
+        "INSERT INTO salon.studio_settings(tenant_id,enabled,monthly_limit,updated_by) VALUES($1,$2,$3,$4) ON CONFLICT(tenant_id) DO UPDATE SET enabled=excluded.enabled,monthly_limit=excluded.monthly_limit,updated_by=excluded.updated_by,updated_at=now()",
+        [tenant, input.enabled, input.monthly_limit, user.id],
+      );
+      await this.db.audit(
+        db,
+        tenant,
+        user.id,
+        "studio.settings_updated",
+        tenant,
+      );
+      return { ok: true };
+    });
+  }
+  @Put("tryons/:job/assessment") async assess(
+    @Req() req: Request,
+    @Param("tenant") tenant: string,
+    @Param("job") job: string,
+    @Body() body: unknown,
+  ) {
+    id.parse(tenant);
+    id.parse(job);
+    const input = z
+      .object({
+        assessment: z.enum(["approved", "rejected"]),
+        notes: z.string().trim().max(500).default(""),
+      })
+      .strict()
+      .parse(body);
+    const user = await this.auth.user(req);
+    return this.db.tenant(
+      user,
+      tenant,
+      ["owner", "manager", "professional"],
+      async (db, role) => {
+        const j = (
+          await db.query(
+            "SELECT * FROM salon.virtual_tryons WHERE tenant_id=$1 AND id=$2 AND status='succeeded' AND deleted_at IS NULL FOR UPDATE",
+            [tenant, job],
+          )
+        ).rows[0];
+        if (!j)
+          throw new NotFoundException(
+            "No existe un resultado disponible para revisar.",
+          );
+        if (role === "professional" && j.created_by !== user.id)
+          throw new ForbiddenException();
+        if (input.assessment === "rejected" && !input.notes)
+          throw new BadRequestException(
+            "Indica qué debe mejorar el resultado.",
+          );
+        const valid = (
+          await db.query(
+            "SELECT id FROM salon.studio_assets WHERE tenant_id=$1 AND id=ANY($2::uuid[]) AND deleted_at IS NULL AND expires_at>now()",
+            [tenant, [j.result_asset_id, j.portrait_asset_id]],
+          )
+        ).rowCount;
+        if (valid !== 2)
+          throw new ConflictException("La imagen ya no está disponible.");
+        await db.query(
+          "UPDATE salon.virtual_tryons SET assessment=$3,assessment_notes=$4,assessed_by=$5,assessed_at=now() WHERE tenant_id=$1 AND id=$2",
+          [tenant, job, input.assessment, input.notes, user.id],
+        );
+        await this.db.audit(
+          db,
+          tenant,
+          user.id,
+          "studio.result_" + input.assessment,
+          job,
+        );
+        return { ok: true };
+      },
+    );
   }
   @Post("assets") async upload(
     @Req() req: Request,
@@ -332,10 +453,6 @@ export class StudioController {
         .parse(body),
       user = await this.auth.user(req);
     return this.db.tenant(user, tenant, [], async (db, role) => {
-      if (!this.provider.enabled())
-        throw new ServiceUnavailableException(
-          "La generación está pendiente de configurar REPLICATE_API_TOKEN. Puedes preparar el catálogo y subir fotos privadas.",
-        );
       await db.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))", [
         "studio-quota:" + tenant,
       ]);
@@ -355,9 +472,33 @@ export class StudioController {
           );
         return { id: prior.id };
       }
+      if (!this.provider.enabled())
+        throw new ServiceUnavailableException(
+          "El proveedor de IA todavía no está configurado. Puedes preparar el catálogo y las fotos.",
+        );
+      const settings = (
+        await db.query(
+          "SELECT enabled,monthly_limit FROM salon.studio_settings WHERE tenant_id=$1",
+          [tenant],
+        )
+      ).rows[0] ?? { enabled: true, monthly_limit: 100 };
+      if (!settings.enabled)
+        throw new ForbiddenException(
+          "Las generaciones están pausadas para este salón.",
+        );
+      const active = (
+        await db.query(
+          "SELECT count(*)::int AS count FROM salon.virtual_tryons WHERE tenant_id=$1 AND status IN ('queued','running') AND deleted_at IS NULL",
+          [tenant],
+        )
+      ).rows[0].count;
+      if (active >= 2)
+        throw new ConflictException(
+          "Hay dos simulaciones pendientes. Espera a que terminen.",
+        );
       const h = (
         await db.query(
-          "SELECT id FROM salon.hairstyles WHERE tenant_id=$1 AND id=$2 AND published",
+          "SELECT h.id FROM salon.hairstyles h JOIN salon.studio_assets a ON a.tenant_id=h.tenant_id AND a.id=h.reference_asset_id WHERE h.tenant_id=$1 AND h.id=$2 AND h.published AND a.deleted_at IS NULL AND (a.expires_at IS NULL OR a.expires_at>now())",
           [tenant, input.hairstyle_id],
         )
       ).rows[0];
@@ -376,10 +517,13 @@ export class StudioController {
       const plan = (
           await db.query("SELECT plan FROM salon.tenants WHERE id=$1", [tenant])
         ).rows[0].plan,
-        limit = plan === "studio" ? 100 : plan === "essential" ? 50 : 10;
+        limit = Math.min(
+          settings.monthly_limit,
+          plan === "studio" ? 100 : plan === "essential" ? 50 : 10,
+        );
       const count = (
         await db.query(
-          "SELECT count(*)::int AS n FROM salon.virtual_tryons WHERE tenant_id=$1 AND created_at>=date_trunc('month',now())",
+          "SELECT count(*)::int AS n FROM salon.virtual_tryons WHERE tenant_id=$1 AND created_at>=(date_trunc('month',now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC')",
           [tenant],
         )
       ).rows[0].n;
@@ -441,6 +585,10 @@ export class StudioController {
             "La cita debe corresponder al servicio y cliente de la simulación.",
           );
         if (j.appointment_id) return { id: j.appointment_id };
+        if (j.assessment !== "approved")
+          throw new BadRequestException(
+            "Revisa y aprueba el resultado antes de preparar la cita.",
+          );
         const result = await this.booking.create(
           db,
           tenant,

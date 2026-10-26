@@ -1503,3 +1503,11 @@ label { font-weight: 500; }
 .auth-form > .text-button { display: flex; width: fit-content; margin-top: var(--space-md); }
 .auth-story small { color: var(--color-inverse-muted); }
 .wordmark:not(:has(.brand-dot))::after { content: '.'; color: var(--color-accent); }
+
+/* Studio operations · incumbent visual system */
+.studio-controls {border-block:var(--rule-thin) solid var(--color-rule);padding-block:var(--space-md);margin-bottom:var(--space-lg)}
+.studio-controls summary {cursor:pointer;font-weight:600;min-height:44px;padding-block:var(--space-sm)}
+.studio-controls>p,.studio-controls>.row {margin-block:var(--space-md)}
+.studio-controls-form {display:flex;flex-wrap:wrap;align-items:end;gap:var(--space-md);margin-block:var(--space-lg)}
+.studio-controls-form label {min-width:0;flex:1 1 180px}
+.studio-assessment {display:grid;gap:var(--space-md);padding-block:var(--space-lg);border-block:var(--rule-thin) solid var(--color-rule)}

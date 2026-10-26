@@ -18,6 +18,7 @@ import {
 import { AuthComponent } from "../../../libs/ui/auth.component";
 import { environment } from "../../../libs/data-access/src/environment";
 import { PageEditorComponent } from "../../../libs/ui/page-editor.component";
+import { FinanceComponent } from "../../../libs/ui/finance.component";
 import { StudioComponent } from "../../../libs/ui/studio.component";
 import { Icon } from "../../../libs/ui/icon";
 import type {
@@ -31,7 +32,7 @@ import type {
 @Component({
   selector: "app-root",
   standalone: true,
-  imports: [FormsModule, AuthComponent, Icon, StudioComponent, PageEditorComponent],
+  imports: [FormsModule, AuthComponent, Icon, StudioComponent, PageEditorComponent, FinanceComponent],
   templateUrl: "./salon.component.html",
 })
 export class SalonApp {
@@ -82,6 +83,7 @@ export class SalonApp {
     { key: "customers", label: "Clientes", icon: "people" },
     { key: "services", label: "Servicios", icon: "scissors" },
     { key: "employees", label: "Equipo", icon: "team" },
+    { key: "finance", label: "Caja", icon: "wallet" },
     { key: "studio", label: "Estudio virtual", icon: "portrait" },
     { key: "site", label: "Página de clientes", icon: "link" },
     { key: "settings", label: "Mi salón", icon: "settings" },

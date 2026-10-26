@@ -63,6 +63,7 @@
       </div>
       <nav id="salon-navigation" aria-label="Gestión del salón">
         @for (item of nav; track item.key) {
+          @if(item.key!=='finance' || canBook()){
           <button
             class="nav-link"
             [class.active]="page() === item.key"
@@ -72,6 +73,7 @@
           >
             <lv-icon [name]="item.icon" /><span>{{ item.label }}</span>
           </button>
+          }
         }
       </nav>
       <div class="sidebar-bottom">
@@ -149,6 +151,7 @@
           }
         </div>
         @switch (page()) {
+          @case ("finance") {<lv-finance [tenantId]="tenantId" [workspace]="w" />}
           @case ("site") {
             <lv-page-editor [tenantId]="tenantId" [role]="w.tenant.role" [publicUrl]="bookingUrl()" (saved)="load()" />
           }

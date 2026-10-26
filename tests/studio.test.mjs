@@ -5,7 +5,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import sharp from "sharp";
 import pg from "pg";
-const base = "http://localhost:8130/api",
+const base = process.env.TEST_API_URL ?? "http://localhost:8130/api",
   admin = new pg.Client({ connectionString: process.env.ADMIN_DATABASE_URL });
 async function api(path, method = "GET", body, cookie = "") {
   const res = await fetch(base + path, {
@@ -232,6 +232,18 @@ test("Virtual Studio: fotos privadas, catálogo, cola y cita vinculada", async (
         }
       },
     );
+    await t.test('controles de generación y consumo sin revelar credenciales',async()=>{
+      assert.equal((await api(root+'/settings','PUT',{enabled:false,monthly_limit:2},cookie)).status,200);
+      const paused=(await api(root,'GET',undefined,cookie)).data;assert.equal(paused.generation_enabled,false);assert.equal(paused.limit,2);assert.equal(paused.remaining,2);assert.equal(paused.plan_limit,10);
+      assert.equal((await api(root+'/settings','PUT',{enabled:true,monthly_limit:11},cookie)).status,400);
+      assert.equal((await api(root+'/settings','PUT',{enabled:true,monthly_limit:2},cookie)).status,200);
+    });
+    await t.test('límite concurrente y pausa validados con PostgreSQL y proveedor sintético',async()=>{
+      const script=`const {Database}=require('./dist/api/apps/api/src/database.js');const {StudioController}=require('./dist/api/apps/api/src/modules/studio/studio.controller.js');const {randomUUID}=require('node:crypto');let input='';process.stdin.on('data',x=>input+=x);process.stdin.on('end',async()=>{const p=JSON.parse(input);const db=new Database();const controller=new StudioController(db,{user:async()=>({id:p.user,email:'synthetic@example.test'})},{},{enabled:()=>true,model:'test-only'},{});const bodies=Array.from({length:4},()=>({...p.body,request_key:randomUUID()}));try{const results=await Promise.all(bodies.map(body=>controller.create({},p.tenant,body).then(value=>({ok:true,id:value.id})).catch(e=>({ok:false,status:e.getStatus?.()}))));const first=results.findIndex(r=>r.ok);await controller.settings({},p.tenant,{enabled:false,monthly_limit:2});const retry=await controller.create({},p.tenant,bodies[first]);let paused;try{await controller.create({},p.tenant,{...p.body,request_key:randomUUID()});}catch(e){paused=e.getStatus?.();}console.log(JSON.stringify({results,retry:retry.id,first:results[first].id,paused}));}finally{await db.onModuleDestroy();}});`;
+      const run=spawnSync('docker',['compose','exec','-T','api','node','-e',script],{input:JSON.stringify({tenant:tid,user:uid,body:{hairstyle_id:style,portrait_asset_id:portrait,external_consent:true}}),encoding:'utf8',timeout:20000});assert.equal(run.status,0,run.stderr);const result=JSON.parse(run.stdout.trim());assert.equal(result.results.filter(r=>r.ok).length,2);assert.equal(result.retry,result.first);assert.equal(result.paused,403);
+      const ids=result.results.filter(r=>r.ok).map(r=>r.id);await admin.query('DELETE FROM salon.virtual_tryons WHERE tenant_id=$1 AND id=ANY($2::uuid[])',[tid,ids]);
+      assert.equal((await api(root+'/settings','PUT',{enabled:true,monthly_limit:2},cookie)).status,200);
+    });
     await t.test(
       "worker con proveedor sintético aislado guarda un resultado privado",
       async () => {
@@ -241,6 +253,10 @@ test("Virtual Studio: fotos privadas, catálogo, cola y cita vinculada", async (
           [job, tid, uid, style, portrait, customer, randomUUID()],
         );
         const script = `const {Database}=require('./dist/api/apps/api/src/database.js');const {StudioStorage}=require('./dist/api/apps/api/src/modules/studio/studio.storage.js');const {StudioWorker}=require('./dist/api/apps/api/src/modules/studio/studio.worker.js');let input='';process.stdin.on('data',x=>input+=x);process.stdin.on('end',async()=>{const tenant=JSON.parse(input).tenant;const db=new Database();const tx=db.tx.bind(db);db.tx=(ctx,fn)=>ctx.platform?Promise.resolve([{id:tenant,suspended:false}]):tx(ctx,fn);const provider={enabled:()=>true,render:async portrait=>portrait};try{await new StudioWorker(db,provider,new StudioStorage()).tick();}finally{await db.onModuleDestroy();}});`;
+        await api(root+'/settings','PUT',{enabled:false,monthly_limit:2},cookie);
+        const pausedWorker=spawnSync('docker',['compose','exec','-T','api','node','-e',script],{input:JSON.stringify({tenant:tid}),encoding:'utf8',timeout:20000});assert.equal(pausedWorker.status,0,pausedWorker.stderr);
+        assert.equal((await admin.query('SELECT status FROM salon.virtual_tryons WHERE id=$1',[job])).rows[0].status,'queued');
+        await api(root+'/settings','PUT',{enabled:true,monthly_limit:2},cookie);
         const result = spawnSync(
           "docker",
           ["compose", "exec", "-T", "api", "node", "-e", script],
@@ -294,6 +310,9 @@ test("Virtual Studio: fotos privadas, catálogo, cola y cita vinculada", async (
           starts_at: slots[0],
           request_key: randomUUID(),
         };
+        const blocked=await api(root+'/tryons/'+job+'/appointment','POST',body,cookie);assert.equal(blocked.status,400);
+        assert.equal((await api(root+'/tryons/'+job+'/assessment','PUT',{assessment:'rejected',notes:'Prueba sintética: revisar el cabello.'},cookie)).status,200);
+        assert.equal((await api(root+'/tryons/'+job+'/assessment','PUT',{assessment:'approved',notes:'Validación de flujo con imagen sintética.'},cookie)).status,200);
         const a = await api(
           root + "/tryons/" + job + "/appointment",
           "POST",
@@ -362,6 +381,7 @@ test("Virtual Studio: fotos privadas, catálogo, cola y cita vinculada", async (
         ).catch(() => {});
       for (const table of [
         "studio_assets",
+        "studio_settings",
         "audit_log",
         "appointments",
         "absences",

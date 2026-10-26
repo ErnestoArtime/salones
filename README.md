@@ -41,8 +41,10 @@ No uses `pnpm setup`: ese es un comando propio del gestor pnpm. Utiliza `pnpm ru
 - Portal público con portada fotográfica, categorías editables y búsqueda de servicios; disponibilidad, reserva con consentimiento registrado, exportación de calendario y enlace privado de cancelación.
 - Planes manuales: prueba (3 profesionales / 1 sede), Essential (10 / 1), Studio (30 / 5). Los límites se aplican en la API.
 - Administración de planes y suspensión de negocios, con auditoría de cambios.
+- Caja por sede, moneda y día: cobros de citas completadas, pagos parciales, devoluciones, entradas/salidas de efectivo, cierres y exportación CSV.
+- Porcentajes de comisión por profesional, cálculo histórico sobre cobros netos y registro separado de pagos de comisión.
 
-El valor de servicios completados es informativo; no representa caja cobrada ni facturación. No hay cobro automático de suscripciones, pagos online, caja, inventario, comisiones, recordatorios, WhatsApp ni push en esta entrega. Los correos de autenticación llegan al buzón local; el portal avisa expresamente de que no envía confirmaciones de citas. El portal es una SPA responsive: SSR y páginas SEO individuales quedan para una fase posterior. La app móvil tiene integración y preparación de Capacitor; los binarios y la verificación en dispositivos requieren Android Studio/Xcode y un dominio HTTPS.
+El valor de servicios completados es informativo; no representa caja cobrada ni facturación. La caja registra pagos ya recibidos; no ejecuta cargos bancarios. No hay cobro automático de suscripciones, pagos online, facturación fiscal, inventario, recordatorios, WhatsApp ni push en esta entrega. Los correos de autenticación llegan al buzón local; el portal avisa expresamente de que no envía confirmaciones de citas. El portal es una SPA responsive: SSR y páginas SEO individuales quedan para una fase posterior. La app móvil tiene integración y preparación de Capacitor; los binarios y la verificación en dispositivos requieren Android Studio/Xcode y un dominio HTTPS.
 
 ## Estudio virtual
 
@@ -93,3 +95,5 @@ Portal visual y categorías: [documentación](docs/public-catalog.md).
 Personalización: [guía de uso y almacenamiento](docs/page-personalization.md).
 
 Actualizaciones del VPS: [despliegue automático desde main](docs/auto-deploy.md).
+
+Gestión económica: [caja, cobros y comisiones](docs/finance.md).

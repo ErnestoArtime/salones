@@ -40,7 +40,7 @@ Las migraciones SQL propias se aplican una sola vez con checksum y bloqueo de ex
 
 ## Extensiones previstas
 
-Entitlements por módulo más detallados; caja, suscripciones cobradas y auditoría exportable; invitaciones por correo; notificaciones transaccionales con outbox y trabajador; recursos compartidos por servicio; paginación y fusión de clientes; páginas públicas con SSR; marca por salón y dominios propios. El MVP reserva un profesional por cita y permite una sede por profesional. No incluye marketplace ni aplicaciones móviles separadas por cliente comercial.
+Entitlements por módulo más detallados; suscripciones cobradas y auditoría exportable; invitaciones por correo; notificaciones transaccionales con outbox y trabajador; recursos compartidos por servicio; paginación y fusión de clientes; páginas públicas con SSR; marca por salón y dominios propios. El MVP reserva un profesional por cita y permite una sede por profesional. No incluye marketplace ni aplicaciones móviles separadas por cliente comercial.
 
 ## Referencias verificadas
 
@@ -68,3 +68,9 @@ optimista; un bloqueo del negocio coordina publicaciones, edición de servicios
 y borrado de fotos. Una categoría en uso no se puede eliminar y una foto en uso
 no se puede borrar. El portal mantiene sus imágenes de referencia opcionales
 como alternativa cuando no hay imagen propia. Guía: `page-personalization.md`.
+
+## Caja y control de IA
+
+`FinanceModule` utiliza `cash_days`, `money_entries` y `commission_rates`: transacciones serializadas por salón, fechas locales de sede, céntimos enteros e historial de movimientos sin UPDATE/DELETE para el rol de ejecución. Devoluciones y pagos de comisión son movimientos adicionales. Las claves foráneas y RLS separan salones; la API aplica roles de caja y de gerencia. Ver `finance.md`.
+
+`studio_settings` controla pausa y cuota del salón; la creación y la toma de tareas usan el mismo bloqueo de cuota. La evaluación del resultado queda registrada en `virtual_tryons` y es requisito para su primera cita vinculada. Se conserva la idempotencia de una cita ya creada. El proveedor permanece opcional y las claves solo se configuran en el servidor.

@@ -88,6 +88,10 @@ export class StudioComponent {
       this.state.set(
         await this.api.request("/tenants/" + this.tenantId() + "/studio"),
       );
+      if (!this.busy()) {
+        this.monthlyLimit = this.state().limit;
+        this.generationEnabled = this.state().generation_enabled;
+      }
       if (this.selected()) {
         const selected = this.state().jobs.find(
           (j: any) => j.id === this.selected().id,
@@ -97,6 +101,68 @@ export class StudioComponent {
     } catch (e) {
       this.error.set((e as Error).message);
     }
+  }
+  monthlyLimit = 0;
+  generationEnabled = true;
+  assessmentNotes = "";
+  async saveControls() {
+    this.busy.set(true);
+    this.error.set("");
+    try {
+      await this.api.request(
+        "/tenants/" + this.tenantId() + "/studio/settings",
+        "PUT",
+        {
+          enabled: this.generationEnabled,
+          monthly_limit: Number(this.monthlyLimit),
+        },
+      );
+      await this.load();
+      this.notice.set("Controles de generación guardados.");
+    } catch (e) {
+      this.error.set((e as Error).message);
+    } finally {
+      this.busy.set(false);
+    }
+  }
+  async assess(value: "approved" | "rejected") {
+    const job = this.selected();
+    if (!job) return;
+    this.busy.set(true);
+    this.error.set("");
+    try {
+      await this.api.request(
+        "/tenants/" +
+          this.tenantId() +
+          "/studio/tryons/" +
+          job.id +
+          "/assessment",
+        "PUT",
+        { assessment: value, notes: this.assessmentNotes },
+      );
+      await this.load();
+      this.notice.set(
+        value === "approved"
+          ? "Resultado aprobado por el profesional."
+          : "Resultado marcado para mejorar.",
+      );
+    } catch (e) {
+      this.error.set((e as Error).message);
+    } finally {
+      this.busy.set(false);
+    }
+  }
+  consumptionLabel(status: string) {
+    return (
+      (
+        {
+          queued: "En espera",
+          running: "En curso",
+          succeeded: "Terminadas",
+          failed: "Fallidas",
+        } as Record<string, string>
+      )[status] ?? status
+    );
   }
   image(id: string) {
     return (
@@ -295,5 +361,6 @@ export class StudioComponent {
     this.selected.set(job);
     this.tab.set("try");
     this.compare = 50;
+    this.assessmentNotes = job.assessment_notes ?? "";
   }
 }

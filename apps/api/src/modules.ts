@@ -1,3 +1,4 @@
+import { FinanceController } from "./modules/finance/finance.controller";
 import { PagesController, PageStorage } from "./modules/pages/pages.controller";
 import { StudioController } from "./modules/studio/studio.controller";
 import { StudioStorage } from "./modules/studio/studio.storage";
@@ -50,7 +51,10 @@ export class PlatformModule {}
 export class StudioModule {}
 @Module({ controllers: [PagesController], providers: [PageStorage] })
 export class PagesModule {}
+@Module({controllers:[FinanceController]})
+export class FinanceModule {}
 export const domainModules = [
+  FinanceModule,
   PagesModule,
   StudioModule,
   CoreModule,

@@ -21,7 +21,7 @@ REPLICATE_API_TOKEN=tu_clave_privada
 STUDIO_MODEL=black-forest-labs/flux-2-pro
 ```
 
-Después: `docker compose up -d --force-recreate api`. No hace falta publicar el VPS: las fotos viajan como entradas de imagen a la API mediante una conexión saliente. El token nunca se entrega al navegador.
+En el VPS gestionado, después de guardar la clave privadamente en `.env`, ejecuta `python3 tools/reload-api-config.py`. El script toma los bloqueos del supervisor, valida la infraestructura aprobada y recrea únicamente la API de la release activa. En un checkout sin supervisor, usa el procedimiento de despliegue de su entorno. No hace falta publicar el VPS: las fotos viajan como entradas de imagen a la API mediante una conexión saliente. El token nunca se entrega al navegador.
 
 Se usa AI SDK 7 con el adaptador oficial de Replicate. El modelo configurado acepta varias imágenes de referencia: se envían primero el rostro del cliente y después el trabajo del salón. Las indicaciones piden preservar identidad y modificar únicamente el cabello. Esto orienta al modelo, pero no garantiza fidelidad facial, viabilidad profesional ni reproducción exacta del corte. El resultado siempre se presenta como simulación orientativa.
 
@@ -50,3 +50,11 @@ Las pruebas usan imágenes sintéticas sin personas. Verifican consentimiento, d
 Referencias técnicas: https://ai-sdk.dev/providers/ai-sdk-providers/replicate y https://replicate.com/black-forest-labs/flux-2-pro/api/schema.
 
 Las fotografías de referencia que se suben pero no se incorporan a un trabajo caducan en 24 horas. El mes de cuota se calcula en UTC.
+
+## Controles y revisión del resultado
+
+Propiedad y gerencia pueden pausar las generaciones y fijar un límite mensual de solicitudes igual o inferior a la cuota del plan. El contador usa meses UTC e incluye fallos y registros cuyas fotos se borraron. Se muestran consumo por estado y solicitudes restantes. Es un límite de solicitudes, no una estimación del precio ni un presupuesto monetario del proveedor. Como máximo se admiten dos tareas pendientes por salón. No hay reintentos automáticos de llamadas de pago.
+
+Pausar impide solicitudes nuevas y que el trabajador tome tareas en espera; las ya enviadas continúan. Las tareas cuyas entradas han caducado pasan a fallo. La pausa y la toma de tareas se coordinan con el mismo bloqueo transaccional.
+
+Los resultados terminados se revisan con el comparador: aprobar o marcar para mejorar, con notas, autor y fecha. Antes de crear la primera cita vinculada se exige aprobación de propiedad, gerencia o el profesional autor de la prueba. Una valoración no garantiza la fidelidad de la IA; la prueba de calidad con proveedor real continúa pendiente de la clave y fotografías con permiso. La interfaz no presenta el proveedor sintético de los tests como una generación real.

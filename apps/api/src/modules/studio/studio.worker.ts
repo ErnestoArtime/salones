@@ -58,6 +58,23 @@ export class StudioWorker implements OnModuleInit, OnModuleDestroy {
             ),
           );
         }
+        await this.db.tx(ctx, (db) =>
+          db.query(
+            "UPDATE salon.virtual_tryons j SET status='failed',error='La fotografía de entrada ya no está disponible. Prepara una nueva prueba.',finished_at=now() WHERE tenant_id=$1 AND status='queued' AND (NOT EXISTS(SELECT 1 FROM salon.studio_assets a WHERE a.tenant_id=j.tenant_id AND a.id=j.portrait_asset_id AND a.deleted_at IS NULL AND a.expires_at>now()) OR NOT EXISTS(SELECT 1 FROM salon.hairstyles h JOIN salon.studio_assets r ON r.tenant_id=h.tenant_id AND r.id=h.reference_asset_id WHERE h.tenant_id=j.tenant_id AND h.id=j.hairstyle_id AND r.deleted_at IS NULL))",
+            [tenant.id],
+          ),
+        );
+        const setting = await this.db.tx(
+          ctx,
+          async (db) =>
+            (
+              await db.query(
+                "SELECT enabled FROM salon.studio_settings WHERE tenant_id=$1",
+                [tenant.id],
+              )
+            ).rows[0],
+        );
+        if (setting?.enabled === false) continue;
         if (
           !this.provider.enabled() ||
           tenant.suspended ||
@@ -65,9 +82,13 @@ export class StudioWorker implements OnModuleInit, OnModuleDestroy {
         )
           continue;
         const job = await this.db.tx(ctx, async (db) => {
+          await db.query(
+            "SELECT pg_advisory_xact_lock(hashtextextended($1,0))",
+            ["studio-quota:" + tenant.id],
+          );
           const row = (
             await db.query(
-              "SELECT j.*,h.instructions,h.reference_asset_id,p.storage_key AS portrait_key,r.storage_key AS reference_key FROM salon.virtual_tryons j JOIN salon.hairstyles h ON h.id=j.hairstyle_id AND h.tenant_id=j.tenant_id JOIN salon.studio_assets p ON p.id=j.portrait_asset_id AND p.tenant_id=j.tenant_id JOIN salon.studio_assets r ON r.id=h.reference_asset_id AND r.tenant_id=h.tenant_id WHERE j.tenant_id=$1 AND j.status='queued' AND j.deleted_at IS NULL AND p.deleted_at IS NULL AND r.deleted_at IS NULL AND p.expires_at>now() ORDER BY j.created_at FOR UPDATE OF j SKIP LOCKED LIMIT 1",
+              "SELECT j.*,h.instructions,h.reference_asset_id,p.storage_key AS portrait_key,r.storage_key AS reference_key FROM salon.virtual_tryons j JOIN salon.hairstyles h ON h.id=j.hairstyle_id AND h.tenant_id=j.tenant_id JOIN salon.studio_assets p ON p.id=j.portrait_asset_id AND p.tenant_id=j.tenant_id JOIN salon.studio_assets r ON r.id=h.reference_asset_id AND r.tenant_id=h.tenant_id WHERE j.tenant_id=$1 AND j.status='queued' AND coalesce((SELECT enabled FROM salon.studio_settings WHERE tenant_id=$1),true) AND j.deleted_at IS NULL AND p.deleted_at IS NULL AND r.deleted_at IS NULL AND p.expires_at>now() ORDER BY j.created_at FOR UPDATE OF j SKIP LOCKED LIMIT 1",
               [tenant.id],
             )
           ).rows[0];
@@ -101,10 +122,12 @@ export class StudioWorker implements OnModuleInit, OnModuleDestroy {
                   "INSERT INTO salon.studio_assets(id,tenant_id,uploaded_by,kind,storage_key,byte_size,expires_at) VALUES($1,$2,$3,'result',$4,$5,now()+interval '72 hours')",
                   [assetId, tenant.id, job.created_by, key, bytes.length],
                 );
-                await db.query(
+                const saved = await db.query(
                   "UPDATE salon.virtual_tryons SET status='succeeded',result_asset_id=$3,finished_at=now() WHERE id=$1 AND tenant_id=$2 AND status='running'",
                   [job.id, tenant.id, assetId],
                 );
+                if (saved.rowCount !== 1)
+                  throw new Error("The job no longer accepts a result");
               });
             } catch (e) {
               await this.storage.remove(key).catch(() => {});

@@ -90,3 +90,9 @@ El negocio QA y sus fotos se eliminaron al finalizar.
 Resultados: `.local/page-integration.log`, `.local/page-final-build.log` y
 `.local/page-final-browser.log`. Capturas del editor en
 `.local/screenshots/page-editor-desktop.png` y `page-editor-mobile.png`.
+
+## Caja y ampliación de IA · 26 de octubre de 2026
+
+Migración 007 validada en un proyecto Compose aislado (`lavia-feature-test`), sin clave de IA externa. 37 comprobaciones de integración pasan: aislamiento, permisos, reservas, imágenes privadas, controles/pausa de IA, cola concurrente, evaluación, cobros, devolución, comisiones y cierres. Tres recorridos nuevos de navegador cubren caja completa, controles de IA y comparador/revisión con imagen sintética, incluidos cinco anchos. Las pruebas crean salones temporales y limpian sus registros y fotos. Se comprueban RLS forzado y privilegios de las cuatro tablas nuevas; no hay acceso anónimo ni UPDATE/DELETE de movimientos para el rol de la API.
+
+El modelo de pago no se ha evaluado con imágenes reales: falta la clave de Replicate. El test sintético verifica el recorrido y las restricciones, no la fidelidad de la IA ni el precio del proveedor.

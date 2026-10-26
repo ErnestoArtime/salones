@@ -23,6 +23,12 @@
     </div>
     <p class="quiet">{{ s.usage }} / {{ s.limit }} simulaciones este mes</p>
   </div>
+  <details class="studio-controls"><summary>Consumo y controles de IA</summary>
+    <p class="quiet">{{s.remaining}} solicitudes disponibles este mes · cuota del plan {{s.plan_limit}} · periodo UTC. Los fallos también consumen cuota; el coste real se consulta en el proveedor.</p>
+    <div class="row">@for(c of s.consumption;track c.status){<span class="badge">{{consumptionLabel(c.status)}}: {{c.count}}</span>}</div>
+    @if(manage()){<form class="studio-controls-form" (ngSubmit)="saveControls()"><label class="check-label"><input type="checkbox" name="generationEnabled" [(ngModel)]="generationEnabled" />Permitir nuevas generaciones</label><label>Límite mensual de solicitudes<input type="number" name="monthlyLimit" min="0" [max]="s.plan_limit" step="1" [(ngModel)]="monthlyLimit" required /></label><button class="button" [disabled]="busy()">Guardar controles</button></form><p class="quiet">Pausar detiene las solicitudes y las tareas en espera. Las generaciones ya enviadas continúan.</p>}
+  </details>
+  @if(!s.generation_enabled){<p class="status-message">La generación está pausada por la gerencia del salón.</p>}
   @if (!s.provider_ready) {
     <div class="studio-provider-note">
       <h3>Generación pendiente de activar</h3>
@@ -259,8 +265,11 @@
                 La simulación puede cambiar rasgos o interpretar el estilo de
                 forma imprecisa. No garantiza el resultado del servicio.
               </p>
+              <div class="studio-assessment"><h3>Revisión del resultado</h3><p class="quiet">{{job.assessment==='approved'?'Aprobado':job.assessment==='rejected'?'Necesita mejorar':'Pendiente de revisión'}}. Comprueba identidad, acabado y viabilidad antes de preparar una cita.</p>
+                @if(manage()||workspace().tenant.role==='professional'){<label>Notas de revisión<textarea [(ngModel)]="assessmentNotes" maxlength="500" rows="3" placeholder="Indica qué conserva bien o qué debe mejorar"></textarea></label><div class="row"><button class="button" [disabled]="busy()" (click)="assess('approved')">Aprobar resultado</button><button class="button" [disabled]="busy()" (click)="assess('rejected')">Marcar para mejorar</button></div>}
+              </div>
               <div class="row">
-                @if (canBook() && !job.appointment_id) {
+                @if (canBook() && !job.appointment_id && job.assessment==='approved') {
                   <button class="button primary" (click)="book.emit(job)">
                     Preparar cita<lv-icon name="calendar" />
                   </button>
@@ -379,6 +388,7 @@
               !styleId() ||
               !externalConsent ||
               !s.provider_ready ||
+              !s.generation_enabled ||
               s.usage >= s.limit
             "
             (click)="generate()"
