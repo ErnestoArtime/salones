@@ -23,6 +23,7 @@ export class Api {
     method = "GET",
     body?: unknown,
     retry = true,
+    timeoutMs = 15000,
   ): Promise<T> {
     let res: Response;
     try {
@@ -31,7 +32,7 @@ export class Api {
           url: (window.LAVIA_API_URL ?? environment.apiUrl) + path,
           method,
           connectTimeout: 10000,
-          readTimeout: 15000,
+          readTimeout: timeoutMs,
           headers: { "Content-Type": "application/json" },
           ...(body !== undefined ? { data: body } : {}),
         });
@@ -42,7 +43,7 @@ export class Api {
         res = await fetch((window.LAVIA_API_URL ?? environment.apiUrl) + path, {
           method,
           credentials: "include",
-          signal: AbortSignal.timeout(15000),
+          signal: AbortSignal.timeout(timeoutMs),
           headers: { "Content-Type": "application/json" },
           ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
         });
@@ -60,7 +61,7 @@ export class Api {
           .finally(() => {
             this.refresh = null;
           });
-      if (await this.refresh) return this.request(path, method, body, false);
+      if (await this.refresh) return this.request(path, method, body, false, timeoutMs);
     }
     const data = await res.json().catch(() => ({}));
     if (!res.ok)

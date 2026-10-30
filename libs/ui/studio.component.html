@@ -157,11 +157,19 @@
               estilo.</label
             ><label
               >Fotografía del trabajo<input
+                #referenceInput
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 [disabled]="!referenceConsent || busy()"
-                (change)="upload($event, 'reference')"
+                (change)="upload(referenceInput, 'reference')"
             /></label>
+            @if (uploading() === 'reference') {
+              <p class="field-help" role="status">Subiendo y preparando la fotografía…</p>
+            }
+            @if (referenceError()) {
+              <p class="error" role="alert">{{referenceError()}}</p>
+              <button type="button" class="text-button" [disabled]="busy()" (click)="upload(referenceInput, 'reference')">Reintentar subida</button>
+            }
             @if (draft.reference_asset_id) {
               <p class="success">Fotografía preparada.</p>
             }
@@ -339,16 +347,24 @@
             autoriza capturar y guardar su foto para esta prueba.</label
           ><label
             >Subir foto o usar cámara<input
+              #portraitInput
               type="file"
               accept="image/jpeg,image/png,image/webp"
               capture="user"
               [disabled]="!photoConsent || busy()"
-              (change)="upload($event, 'portrait')"
+              (change)="upload(portraitInput, 'portrait')"
           /></label>
           <p class="field-help">
             JPEG, PNG o WebP · hasta 5 MB. Se eliminan los metadatos y las fotos
             caducan en 72 horas.
           </p>
+          @if (uploading() === 'portrait') {
+            <p class="field-help" role="status">Subiendo y preparando la foto… Espera a que termine la subida.</p>
+          }
+          @if (portraitError()) {
+            <p class="error" role="alert">{{portraitError()}}</p>
+            <button type="button" class="text-button" [disabled]="busy()" (click)="upload(portraitInput, 'portrait')">Reintentar subida</button>
+          }
           @if (portraitId()) {
             <img
               class="portrait-preview"
@@ -359,7 +375,7 @@
             /><button
               class="text-button"
               [disabled]="busy()"
-              (click)="removePortrait()"
+              (click)="removePortrait(portraitInput)"
             >
               Retirar fotografía
             </button>
@@ -384,6 +400,7 @@
             class="button primary"
             [disabled]="
               busy() ||
+              !!portraitError() ||
               !portraitId() ||
               !styleId() ||
               !externalConsent ||
@@ -391,11 +408,15 @@
               !s.generation_enabled ||
               s.usage >= s.limit
             "
+            [attr.aria-describedby]="generationHint() ? 'studio-generation-hint' : null"
             (click)="generate()"
           >
-            {{ busy() ? "Preparando…" : "Generar simulación"
+            {{ uploading() === 'portrait' ? 'Subiendo foto…' : busy() ? "Preparando…" : "Generar simulación"
             }}<lv-icon name="arrow" />
           </button>
+          @if (generationHint()) {
+            <p class="field-help" id="studio-generation-hint">{{generationHint()}}</p>
+          }
           @if (s.provider_ready) {<p class="field-help">{{s.usage >= s.limit ? 'Cuota mensual agotada.' : 'Cada solicitud reserva una unidad de la cuota. Los fallos pueden tener coste en el proveedor.'}}</p>}
         </div>
       </section>

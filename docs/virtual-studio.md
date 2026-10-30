@@ -44,6 +44,8 @@ Supabase Storage mantiene el bucket `virtual-studio` privado. El navegador solo 
 
 Se aceptan JPEG, PNG y WebP, máximo 5 MB y 16 megapíxeles. El servidor decodifica y normaliza a JPEG, elimina EXIF y limita dimensiones. El consentimiento se registra con fecha y versión `studio-v1`. Las fotos de clientes y resultados caducan en 72 horas; la API impide verlas al caducar y el mantenimiento periódico elimina los objetos del almacenamiento activo. Las referencias del catálogo se conservan mientras formen parte del catálogo.
 
+La subida de fotografías permite hasta 120 segundos, manteniendo el límite de 15 segundos para las demás peticiones. El archivo del retrato permanece seleccionado al terminar o fallar; los errores aparecen junto al campo y permiten reintentar sin volver a elegirlo. Una sustitución fallida conserva la foto anterior pero bloquea generar hasta resolver el error. El botón explica si falta un estilo, una foto, consentimiento, cuota o activación del proveedor. Subir una imagen no envía ninguna generación al proveedor externo.
+
 El usuario puede retirar una foto todavía no utilizada o borrar las fotos y pruebas que comparten un retrato desde el historial. Una tarea en curso debe terminar antes del borrado. Los registros de consumo y auditoría se conservan sin imagen. Las copias de seguridad contienen los archivos y pueden conservar fotos hasta su rotación; el borrado local no garantiza que el proveedor haya eliminado su copia. La aplicación no usa estas fotos para entrenar modelos.
 
 ## Tareas, cuotas y fallos

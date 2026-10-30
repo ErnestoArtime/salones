@@ -27,6 +27,9 @@ export class StudioComponent {
   state = signal<any>(null);
   error = signal("");
   busy = signal(false);
+  uploading = signal<"portrait" | "reference" | null>(null);
+  portraitError = signal("");
+  referenceError = signal("");
   notice = signal("");
   tab = signal("try");
   styleId = signal("");
@@ -71,6 +74,8 @@ export class StudioComponent {
       this.portraitId.set("");
       this.selected.set(null);
       this.styleId.set("");
+      this.portraitError.set("");
+      this.referenceError.set("");
       void this.load();
     });
     const timer = setInterval(() => {
@@ -173,25 +178,27 @@ export class StudioComponent {
       id
     );
   }
-  async upload(event: Event, kind: "portrait" | "reference") {
-    const input = event.target as HTMLInputElement,
-      file = input.files?.[0];
-    if (!file) return;
+  async upload(input: HTMLInputElement, kind: "portrait" | "reference") {
+    const file = input.files?.[0];
+    if (!file || this.busy()) return;
+    const fieldError = kind === "portrait" ? this.portraitError : this.referenceError;
+    const tenant = this.tenantId();
+    fieldError.set("");
+    this.error.set("");
+    this.notice.set("");
     if (
       (kind === "portrait" && !this.photoConsent) ||
       (kind === "reference" && !this.referenceConsent)
     ) {
-      this.error.set("Confirma el permiso antes de subir la fotografía.");
-      input.value = "";
+      fieldError.set("Confirma el permiso antes de subir la fotografía.");
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      this.error.set("La fotografía supera 5 MB. Reduce su tamaño.");
-      input.value = "";
+      fieldError.set("La fotografía supera 5 MB. Reduce su tamaño y vuelve a seleccionarla.");
       return;
     }
     this.busy.set(true);
-    this.error.set("");
+    this.uploading.set(kind);
     try {
       const data = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -200,30 +207,37 @@ export class StudioComponent {
         reader.readAsDataURL(file);
       });
       const asset = await this.api.request(
-        "/tenants/" + this.tenantId() + "/studio/assets",
+        "/tenants/" + tenant + "/studio/assets",
         "POST",
         { kind, data, consent: true },
+        true,
+        120000,
       );
+      if (tenant !== this.tenantId()) return;
       if (kind === "portrait") {
         const old = this.portraitId();
         this.portraitId.set(asset.id);
         if (old)
           await this.api
             .request(
-              "/tenants/" + this.tenantId() + "/studio/assets/" + old,
+              "/tenants/" + tenant + "/studio/assets/" + old,
               "DELETE",
             )
             .catch(() => {});
-      } else this.draft.reference_asset_id = asset.id;
+      } else {
+        this.draft.reference_asset_id = asset.id;
+        input.value = "";
+      }
       this.notice.set("Fotografía guardada de forma privada.");
     } catch (e) {
-      this.error.set((e as Error).message);
+      if (tenant === this.tenantId())
+        fieldError.set("No se pudo subir la fotografía. " + (e as Error).message);
     } finally {
       this.busy.set(false);
-      input.value = "";
+      this.uploading.set(null);
     }
   }
-  async removePortrait() {
+  async removePortrait(input?: HTMLInputElement) {
     const id = this.portraitId();
     if (!id) return;
     this.busy.set(true);
@@ -233,6 +247,8 @@ export class StudioComponent {
         "DELETE",
       );
       this.portraitId.set("");
+      this.portraitError.set("");
+      if (input) input.value = "";
       this.photoConsent = false;
       this.externalConsent = false;
     } catch (e) {
@@ -298,6 +314,7 @@ export class StudioComponent {
     }
   }
   async generate() {
+    if (this.generationHint()) return;
     this.busy.set(true);
     this.error.set("");
     try {
@@ -328,6 +345,19 @@ export class StudioComponent {
     } finally {
       this.busy.set(false);
     }
+  }
+  generationHint() {
+    const state = this.state();
+    if (this.uploading() === "portrait") return "Espera a que termine de subirse la foto.";
+    if (this.busy()) return "Espera a que termine la operación en curso.";
+    if (!state?.provider_ready) return "El proveedor de IA todavía no está configurado.";
+    if (!state.generation_enabled) return "La gerencia ha pausado las generaciones.";
+    if (state.usage >= state.limit) return "Has agotado la cuota de simulaciones de este mes.";
+    if (this.portraitError()) return "Reintenta la subida o selecciona otra fotografía.";
+    if (!this.styleId()) return "Selecciona un estilo del catálogo para probarlo.";
+    if (!this.portraitId()) return "Sube la foto del cliente para continuar.";
+    if (!this.externalConsent) return "Confirma el permiso para enviar las fotos al proveedor de IA.";
+    return "";
   }
   async remove(job: any) {
     this.busy.set(true);
