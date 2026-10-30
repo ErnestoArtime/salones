@@ -85,9 +85,9 @@ export class StudioComponent {
   }
   async load() {
     try {
-      this.state.set(
-        await this.api.request("/tenants/" + this.tenantId() + "/studio"),
-      );
+      const next = await this.api.request<any>("/tenants/" + this.tenantId() + "/studio");
+      if (this.state()?.provider_id !== next.provider_id) this.externalConsent = false;
+      this.state.set(next);
       if (!this.busy()) {
         this.monthlyLimit = this.state().limit;
         this.generationEnabled = this.state().generation_enabled;
@@ -305,6 +305,7 @@ export class StudioComponent {
         hairstyle_id: this.styleId(),
         portrait_asset_id: this.portraitId(),
         external_consent: this.externalConsent,
+        external_consent_provider: this.state().provider_id,
         ...(this.customerId ? { customer_id: this.customerId } : {}),
       };
       const signature = JSON.stringify(base);

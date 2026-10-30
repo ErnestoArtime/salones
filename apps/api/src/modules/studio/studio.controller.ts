@@ -98,7 +98,8 @@ export class StudioController {
           Math.min(settings.monthly_limit, planLimit) - usage,
         ),
         provider_ready: this.provider.enabled(),
-        provider: "Replicate",
+        provider: this.provider.name,
+        provider_id: this.provider.id,
         model: this.provider.model,
         retention_hours: 72,
       };
@@ -447,6 +448,7 @@ export class StudioController {
           portrait_asset_id: id,
           customer_id: id.optional(),
           external_consent: z.literal(true),
+          external_consent_provider: z.enum(["replicate", "runway"]).optional(),
           request_key: id,
         })
         .strict()
@@ -475,6 +477,10 @@ export class StudioController {
       if (!this.provider.enabled())
         throw new ServiceUnavailableException(
           "El proveedor de IA todavía no está configurado. Puedes preparar el catálogo y las fotos.",
+        );
+      if ((input.external_consent_provider ?? "replicate") !== this.provider.id)
+        throw new ConflictException(
+          "El proveedor de IA ha cambiado. Actualiza la página y confirma el consentimiento para el proveedor indicado.",
         );
       const settings = (
         await db.query(
@@ -532,7 +538,7 @@ export class StudioController {
           "Has alcanzado la cuota de simulaciones de este mes.",
         );
       const { rows } = await db.query(
-        "INSERT INTO salon.virtual_tryons(tenant_id,created_by,hairstyle_id,portrait_asset_id,customer_id,request_key,request_hash,provider,model,external_consent_at) VALUES($1,$2,$3,$4,$5,$6,$7,'replicate',$8,now()) RETURNING id",
+        "INSERT INTO salon.virtual_tryons(tenant_id,created_by,hairstyle_id,portrait_asset_id,customer_id,request_key,request_hash,provider,model,external_consent_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,now()) RETURNING id",
         [
           tenant,
           user.id,
@@ -541,6 +547,7 @@ export class StudioController {
           input.customer_id ?? null,
           input.request_key,
           hash,
+          this.provider.id,
           this.provider.model,
         ],
       );

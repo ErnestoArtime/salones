@@ -159,6 +159,9 @@ services:
       BOOKING_URL: ${BOOKING_URL}
       STORAGE_URL: http://storage:5000
       REPLICATE_API_TOKEN: ${REPLICATE_API_TOKEN:-}
+      STUDIO_PROVIDER: ${STUDIO_PROVIDER:-replicate}
+      RUNWAYML_API_SECRET: ${RUNWAYML_API_SECRET:-}
+      RUNWAY_STUDIO_MODEL: ${RUNWAY_STUDIO_MODEL:-gen4_image}
       STUDIO_MODEL: ${STUDIO_MODEL:-black-forest-labs/flux-2-pro}
       PLATFORM_ADMIN_EMAILS: ${PLATFORM_ADMIN_EMAILS:-}
     healthcheck:

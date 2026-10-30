@@ -48,7 +48,7 @@ El valor de servicios completados es informativo; no representa caja cobrada ni 
 
 ## Estudio virtual
 
-Se ha añadido un catálogo de trabajos propios del salón, carga privada de retratos con consentimiento, tareas de generación, cuotas, comparador antes/después, historial y vínculo con citas. La API externa está preparada con Replicate y FLUX.2 Pro; **no hay clave configurada y no se generan imágenes reales todavía**. Consulta [Virtual Studio](docs/virtual-studio.md) para activarlo y conocer su alcance.
+Se ha añadido un catálogo de trabajos propios del salón, carga privada de retratos con consentimiento, tareas de generación, cuotas, comparador antes/después, historial y vínculo con citas. Admite Runway con Gen-4 Image y Replicate con FLUX.2 Pro, seleccionados en el servidor; el consentimiento identifica al proveedor elegido. Las claves son privadas y las generaciones pueden tener coste. La calidad con fotografías reales debe validarse en el piloto. Consulta [Virtual Studio](docs/virtual-studio.md) para configurarlo y conocer su alcance.
 
 ## Estructura
 

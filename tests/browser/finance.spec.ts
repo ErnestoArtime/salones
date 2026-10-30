@@ -142,6 +142,9 @@ test("IA: controles del salón y estado de proveedor coherentes", async ({
       page.getByRole("heading", { name: "Agenda", exact: true }),
     ).toBeVisible();
     await navigate(page, "Estudio virtual");
+    await expect(page.getByLabel(/autoriza enviar su foto y la referencia del peinado/)).toHaveAccessibleName(
+      new RegExp(process.env.STUDIO_PROVIDER === "runway" ? "Runway" : "Replicate"),
+    );
     await page.getByText("Consumo y controles de IA", { exact: true }).click();
     await page
       .getByLabel("Permitir nuevas generaciones", { exact: true })
@@ -180,6 +183,7 @@ test("IA: controles del salón y estado de proveedor coherentes", async ({
     expect(state.data.limit).toBe(3);
     expect(state.data.generation_enabled).toBe(false);
     expect(JSON.stringify(state.data)).not.toContain("REPLICATE_API_TOKEN");
+    expect(JSON.stringify(state.data)).not.toContain("RUNWAYML_API_SECRET");
   } finally {
     if (f) await f.cleanup();
     await admin.end();

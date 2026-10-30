@@ -111,6 +111,7 @@ export class StudioWorker implements OnModuleInit, OnModuleDestroy {
               job.instructions,
               AbortSignal.any([this.stop.signal, AbortSignal.timeout(240000)]),
               job.model,
+              job.provider,
             );
             const bytes = await this.storage.normalize(rendered),
               assetId = randomUUID(),

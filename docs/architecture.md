@@ -34,7 +34,7 @@ La cancelación pública requiere un token específico, del que solo se almacena
 
 Compose ejecuta Database, Auth, REST y Storage de Supabase, además de API, frontends, Caddy y Mailpit. Se omiten Studio, analítica, Realtime y Edge Functions para reducir consumo. La referencia de infraestructura está fijada a Supabase self-hosted/v0.8.3; las imágenes tienen versiones explícitas.
 
-El núcleo de gestión no depende de Vercel, Supabase Cloud, servicios de correo externos ni SDKs de pagos. Virtual Studio añade una conexión opcional a Replicate, activada únicamente al configurar la clave del servidor y obtener el consentimiento correspondiente. Mailpit retiene correos únicamente para pruebas. Los archivos de fuentes también se sirven desde el VPS.
+El núcleo de gestión no depende de Vercel, Supabase Cloud, servicios de correo externos ni SDKs de pagos. Virtual Studio añade conexiones opcionales a Runway y Replicate, activadas únicamente al configurar la clave del servidor y obtener consentimiento para el proveedor elegido. Cada tarea conserva proveedor y modelo: cambiar la configuración no redirige las fotos de una tarea anterior. No hay cambio automático de proveedor al fallar. Mailpit retiene correos únicamente para pruebas. Los archivos de fuentes también se sirven desde el VPS.
 
 Las migraciones SQL propias se aplican una sola vez con checksum y bloqueo de exclusión. No mezclar este historial con `supabase db push`: el directorio es propio de la aplicación. Cada cambio se añade como una migración nueva.
 
