@@ -15,3 +15,7 @@ El comando compila la configuración `native`, genera el proyecto de plataforma 
 Abre el proyecto generado con Android Studio o Xcode. Son necesarios sus SDKs, un dispositivo/emulador y credenciales de firma para producir y distribuir binarios. No se han compilado APK/AAB/IPA ni validado cookies o teclado en dispositivos durante esta entrega; las pruebas móviles realizadas son del navegador responsive. La recuperación de contraseña se abre en la web del dominio configurado. Push, deep links, biometría y modo sin conexión no están implementados.
 
 El portal de clientes se comparte como enlace web; no necesita instalación.
+
+## Cámara del estudio
+
+El estudio usa la cámara del navegador/WebView con audio desactivado, cambio frontal/trasera y selección de archivo como alternativa. `tools/native.mjs` añade CAMERA al manifiesto Android (hardware opcional) y NSCameraUsageDescription al Info.plist de iOS. Deben verificarse las solicitudes de permiso, captura y segmentación local en los dispositivos destino. Estos permisos no significan que se hayan construido o publicado binarios.

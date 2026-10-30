@@ -142,7 +142,7 @@ test("IA: controles del salón y estado de proveedor coherentes", async ({
       page.getByRole("heading", { name: "Agenda", exact: true }),
     ).toBeVisible();
     await navigate(page, "Estudio virtual");
-    await expect(page.getByLabel(/autoriza enviar su foto y la referencia del peinado/)).toHaveAccessibleName(
+    await expect(page.getByLabel(/autoriza enviar su foto preparada y las referencias seleccionadas/)).toHaveAccessibleName(
       new RegExp(process.env.STUDIO_PROVIDER === "runway" ? "Runway" : "Replicate"),
     );
     await page.getByText("Consumo y controles de IA", { exact: true }).click();

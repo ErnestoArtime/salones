@@ -187,6 +187,14 @@ test("Runway: referencias, espera, privacidad y aislamiento de proveedor sin lla
         );
       },
     );
+    await t.test("Runway admite una tercera referencia de barba sin perder el alcance", async () => {
+      failure = undefined;
+      globalThis.fetch = async () => new Response(bytes, { headers: {"content-type":"image/jpeg"} });
+      await provider.render(bytes, bytes, "Quiff", signal, "gen4_image", "runway", {scope:"hair_beard",beardReference:bytes,beardInstructions:"Short boxed beard"});
+      assert.equal(creates.at(-1).body.referenceImages.length,3);
+      assert.equal(creates.at(-1).body.referenceImages[2].tag,"beard");
+      assert.match(creates.at(-1).body.promptText,/Change both scalp hair and facial hair/);
+    });
     await t.test(
       "Replicate recibe input_images según su esquema actual, sin perder las referencias",
       async () => {
@@ -238,6 +246,9 @@ test("Runway: referencias, espera, privacidad y aislamiento de proveedor sin lla
         assert.equal(requests[0].input.aspect_ratio, "match_input_image");
         assert.equal(requests[0].input.resolution, "1 MP");
         assert.equal(requests[0].input.num_outputs, 1);
+      await provider.render(bytes,bytes,"Quiff",signal,"black-forest-labs/flux-2-pro","replicate",{scope:"hair_beard",beardReference:bytes,beardInstructions:"Boxed beard"});
+      assert.equal(requests[1].input.input_images.length,3);
+      assert.match(requests[1].input.prompt,/image 3/);
       },
     );
   } finally {

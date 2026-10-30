@@ -60,7 +60,7 @@ export class StudioWorker implements OnModuleInit, OnModuleDestroy {
         }
         await this.db.tx(ctx, (db) =>
           db.query(
-            "UPDATE salon.virtual_tryons j SET status='failed',error='La fotografía de entrada ya no está disponible. Prepara una nueva prueba.',finished_at=now() WHERE tenant_id=$1 AND status='queued' AND (NOT EXISTS(SELECT 1 FROM salon.studio_assets a WHERE a.tenant_id=j.tenant_id AND a.id=j.portrait_asset_id AND a.deleted_at IS NULL AND a.expires_at>now()) OR NOT EXISTS(SELECT 1 FROM salon.hairstyles h JOIN salon.studio_assets r ON r.tenant_id=h.tenant_id AND r.id=h.reference_asset_id WHERE h.tenant_id=j.tenant_id AND h.id=j.hairstyle_id AND r.deleted_at IS NULL))",
+            "UPDATE salon.virtual_tryons j SET status='failed',error='La fotografía de entrada ya no está disponible. Prepara una nueva prueba.',finished_at=now() WHERE tenant_id=$1 AND status='queued' AND (NOT EXISTS(SELECT 1 FROM salon.studio_assets a WHERE a.tenant_id=j.tenant_id AND a.id=j.portrait_asset_id AND a.deleted_at IS NULL AND a.expires_at>now()) OR NOT EXISTS(SELECT 1 FROM salon.hairstyles h JOIN salon.studio_assets r ON r.tenant_id=h.tenant_id AND r.id=h.reference_asset_id WHERE h.tenant_id=j.tenant_id AND h.id=j.hairstyle_id AND r.deleted_at IS NULL) OR (j.beard_hairstyle_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM salon.hairstyles b JOIN salon.studio_assets br ON br.id=b.reference_asset_id AND br.tenant_id=b.tenant_id WHERE b.tenant_id=j.tenant_id AND b.id=j.beard_hairstyle_id AND br.deleted_at IS NULL)))",
             [tenant.id],
           ),
         );
@@ -88,7 +88,7 @@ export class StudioWorker implements OnModuleInit, OnModuleDestroy {
           );
           const row = (
             await db.query(
-              "SELECT j.*,h.instructions,h.reference_asset_id,p.storage_key AS portrait_key,r.storage_key AS reference_key FROM salon.virtual_tryons j JOIN salon.hairstyles h ON h.id=j.hairstyle_id AND h.tenant_id=j.tenant_id JOIN salon.studio_assets p ON p.id=j.portrait_asset_id AND p.tenant_id=j.tenant_id JOIN salon.studio_assets r ON r.id=h.reference_asset_id AND r.tenant_id=h.tenant_id WHERE j.tenant_id=$1 AND j.status='queued' AND coalesce((SELECT enabled FROM salon.studio_settings WHERE tenant_id=$1),true) AND j.deleted_at IS NULL AND p.deleted_at IS NULL AND r.deleted_at IS NULL AND p.expires_at>now() ORDER BY j.created_at FOR UPDATE OF j SKIP LOCKED LIMIT 1",
+              "SELECT j.*,h.instructions,h.reference_asset_id,p.storage_key AS portrait_key,r.storage_key AS reference_key,b.instructions AS beard_instructions,br.storage_key AS beard_key FROM salon.virtual_tryons j JOIN salon.hairstyles h ON h.id=j.hairstyle_id AND h.tenant_id=j.tenant_id JOIN salon.studio_assets p ON p.id=j.portrait_asset_id AND p.tenant_id=j.tenant_id JOIN salon.studio_assets r ON r.id=h.reference_asset_id AND r.tenant_id=h.tenant_id LEFT JOIN salon.hairstyles b ON b.id=j.beard_hairstyle_id AND b.tenant_id=j.tenant_id LEFT JOIN salon.studio_assets br ON br.id=b.reference_asset_id AND br.tenant_id=b.tenant_id WHERE j.tenant_id=$1 AND j.status='queued' AND coalesce((SELECT enabled FROM salon.studio_settings WHERE tenant_id=$1),true) AND j.deleted_at IS NULL AND p.deleted_at IS NULL AND r.deleted_at IS NULL AND p.expires_at>now() AND (j.beard_hairstyle_id IS NULL OR (b.id IS NOT NULL AND br.id IS NOT NULL AND br.deleted_at IS NULL)) ORDER BY j.created_at FOR UPDATE OF j SKIP LOCKED LIMIT 1",
               [tenant.id],
             )
           ).rows[0];
@@ -101,9 +101,10 @@ export class StudioWorker implements OnModuleInit, OnModuleDestroy {
         });
         if (job) {
           try {
-            const [portrait, reference] = await Promise.all([
+            const [portrait, reference, beardReference] = await Promise.all([
               this.storage.get(job.portrait_key),
               this.storage.get(job.reference_key),
+              job.beard_key ? this.storage.get(job.beard_key) : Promise.resolve(undefined),
             ]);
             const rendered = await this.provider.render(
               portrait,
@@ -112,6 +113,7 @@ export class StudioWorker implements OnModuleInit, OnModuleDestroy {
               AbortSignal.any([this.stop.signal, AbortSignal.timeout(240000)]),
               job.model,
               job.provider,
+              { scope: job.target_scope ?? "hair", beardReference, beardInstructions: job.beard_instructions ?? undefined },
             );
             const bytes = await this.storage.normalize(rendered),
               assetId = randomUUID(),

@@ -18,7 +18,10 @@
               "tokens.css",
               "libs/ui/styles.css"
             ],
-            "assets": []
+            "assets": [
+              {"glob":"**/*","input":"apps/salon-app/public","output":"/"},
+              {"glob":"**/*","input":"node_modules/@mediapipe/tasks-vision/wasm","output":"/studio-vision/wasm/"}
+            ]
           },
           "configurations": {
             "production": {

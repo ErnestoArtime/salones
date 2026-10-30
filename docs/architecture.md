@@ -74,3 +74,7 @@ como alternativa cuando no hay imagen propia. Guía: `page-personalization.md`.
 `FinanceModule` utiliza `cash_days`, `money_entries` y `commission_rates`: transacciones serializadas por salón, fechas locales de sede, céntimos enteros e historial de movimientos sin UPDATE/DELETE para el rol de ejecución. Devoluciones y pagos de comisión son movimientos adicionales. Las claves foráneas y RLS separan salones; la API aplica roles de caja y de gerencia. Ver `finance.md`.
 
 `studio_settings` controla pausa y cuota del salón; la creación y la toma de tareas usan el mismo bloqueo de cuota. La evaluación del resultado queda registrada en `virtual_tryons` y es requisito para su primera cita vinculada. Se conserva la idempotencia de una cita ya creada. El proveedor permanece opcional y las claves solo se configuran en el servidor.
+
+## Preparación y alcance de simulaciones
+
+La gestión prepara el retrato con segmentación local MediaPipe autoalojada antes de enviarlo a la API. La cámara se encapsula en un componente que libera sus streams. `hairstyles.target_scope` clasifica referencias y `virtual_tryons.target_scope/beard_hairstyle_id` conservan la elección. La API controla compatibilidad y aislamiento; el trabajador y un constructor de prompts común envían dos o tres imágenes a Replicate/Runway sin fallback. La asociación con citas sigue usando el servicio principal.

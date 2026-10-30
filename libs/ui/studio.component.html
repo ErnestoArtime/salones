@@ -68,7 +68,9 @@
                 }
               </p>
               <p class="muted">{{ style.description }}</p>
+              <p class="quiet">{{scopeLabel(style.target_scope)}}</p>
               @if (manage()) {
+                <label>Aplicar referencia a<select [ngModel]="style.target_scope" (ngModelChange)="updateScope(style, $event)" [disabled]="busy()"><option value="hair">Solo cabello</option><option value="beard">Solo barba</option><option value="hair_beard">Cabello y barba</option></select></label>
                 <button
                   class="text-button"
                   [disabled]="busy()"
@@ -133,6 +135,8 @@
                 <option value="color">Color</option>
                 <option value="finish">Acabado</option>
               </select></label
+            ><label
+              >Aplicar referencia a<select name="targetScope" [(ngModel)]="draft.target_scope"><option value="hair">Solo cabello</option><option value="beard">Solo barba</option><option value="hair_beard">Cabello y barba</option></select></label
             ><label
               >Descripción<textarea
                 name="description"
@@ -204,7 +208,7 @@
           <div>
             <h3>{{ job.name }}</h3>
             <p class="quiet">
-              {{ job.created_at.slice(0, 10) }} · {{ statusLabel(job.status) }}
+              {{ job.created_at.slice(0, 10) }} · {{ statusLabel(job.status) }} · {{scopeLabel(job.target_scope)}}
               @if (job.appointment_id) {
                 · Vinculada a cita
               }
@@ -232,6 +236,7 @@
   } @else {
     <div class="studio-layout">
       <section>
+        <label class="studio-scope">¿Qué quieres simular?<select [ngModel]="targetScope()" (ngModelChange)="changeScope($event)"><option value="hair">Solo cabello · conservar barba</option><option value="beard">Solo barba · conservar cabello</option><option value="hair_beard">Cabello y barba juntos</option></select></label>
         <h2>Elige un trabajo del catálogo</h2>
         <p class="muted" style="margin-block: 16px">
           Una simulación para conversar sobre el próximo look. Tu profesional
@@ -243,6 +248,7 @@
               <h3>{{ job.name }}</h3>
               <span class="badge">{{ statusLabel(job.status) }}</span>
             </div>
+            <p class="quiet">{{scopeLabel(job.target_scope)}}</p>
             @if (job.status === "succeeded" && job.result_asset_id) {
               <div class="before-after">
                 <img
@@ -317,7 +323,7 @@
               class="style-choice"
               [class.selected]="styleId() === style.id"
               [attr.aria-pressed]="styleId() === style.id"
-              (click)="styleId.set(style.id)"
+              (click)="chooseStyle(style)"
             >
               <img
                 [src]="image(style.reference_asset_id)"
@@ -338,6 +344,10 @@
             </div>
           }
         </div>
+        @if(targetScope() === 'hair_beard') {
+          <label class="studio-beard-reference">Referencia para la barba<select [ngModel]="beardStyleId()" (ngModelChange)="beardStyleId.set($event)"><option value="">Usar la referencia principal si incluye cabello y barba</option>@for(beard of beardStyles();track beard.id){<option [value]="beard.id">{{beard.name}}</option>}</select></label>
+          <p class="field-help">Puedes combinar una referencia de cabello con otra de barba. Las referencias se marcan desde Catálogo.</p>
+        }
       </section>
       <section class="studio-editor">
         <h2>Foto del cliente</h2>
@@ -346,26 +356,29 @@
             ><input type="checkbox" [(ngModel)]="photoConsent" />El cliente
             autoriza capturar y guardar su foto para esta prueba.</label
           ><label
-            >Subir foto o usar cámara<input
+            >Subir foto del dispositivo<input
               #portraitInput
               type="file"
               accept="image/jpeg,image/png,image/webp"
-              capture="user"
               [disabled]="!photoConsent || busy()"
               (change)="upload(portraitInput, 'portrait')"
           /></label>
+          <button type="button" class="button" [disabled]="!photoConsent || busy()" (click)="cameraOpen.set(!cameraOpen())">{{cameraOpen() ? 'Cerrar cámara' : 'Abrir cámara'}}</button>
+          @if(cameraOpen()) {<lv-camera-capture (captured)="cameraCaptured($event, portraitInput)" (closed)="cameraOpen.set(false)" />}
           <p class="field-help">
             JPEG, PNG o WebP · hasta 5 MB. Se eliminan los metadatos y las fotos
             caducan en 72 horas.
           </p>
+          <p class="field-help">El fondo se retira en este dispositivo y se sustituye por blanco antes de subir la foto. Revisa el contorno de cabello y barba en la vista previa.</p>
           @if (uploading() === 'portrait') {
-            <p class="field-help" role="status">Subiendo y preparando la foto… Espera a que termine la subida.</p>
+            <p class="field-help" role="status">{{preparingPortrait() ? 'Quitando el fondo en este dispositivo… La primera vez se descarga la herramienta.' : 'Subiendo la foto preparada…'}}</p>
           }
           @if (portraitError()) {
             <p class="error" role="alert">{{portraitError()}}</p>
-            <button type="button" class="text-button" [disabled]="busy()" (click)="upload(portraitInput, 'portrait')">Reintentar subida</button>
+            <button type="button" class="text-button" [disabled]="busy()" (click)="retryPortrait(portraitInput)">Reintentar subida</button>
           }
           @if (portraitId()) {
+            @if(cameraPhoto()){<p class="field-help">Foto tomada con la cámara del dispositivo.</p>}
             <img
               class="portrait-preview"
               [src]="image(portraitId())"
@@ -392,7 +405,7 @@
           }
           <label class="check-label"
             ><input type="checkbox" [(ngModel)]="externalConsent" />El cliente
-            autoriza enviar su foto y la referencia del peinado a {{s.provider}} para
+            autoriza enviar su foto preparada y las referencias seleccionadas a {{s.provider}} para
             generar esta simulación.</label
           >
           <details class="studio-privacy"><summary>Tratamiento de las fotografías</summary><p>Lavía no utiliza estas fotos para entrenar modelos. La retención del proveedor debe revisarse antes de activar la API. Las copias de seguridad pueden conservar fotos hasta su rotación.</p></details>
@@ -403,6 +416,7 @@
               !!portraitError() ||
               !portraitId() ||
               !styleId() ||
+              (targetScope() === 'hair_beard' && style()?.target_scope !== 'hair_beard' && !beardStyleId()) ||
               !externalConsent ||
               !s.provider_ready ||
               !s.generation_enabled ||

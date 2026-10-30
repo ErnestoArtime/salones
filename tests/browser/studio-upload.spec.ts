@@ -1,6 +1,6 @@
 import "dotenv/config";
 import pg from "pg";
-import sharp from "sharp";
+import fs from "node:fs";
 import { test, expect, navigate } from "./fixtures";
 // @ts-ignore shared fixture creates and removes only its own temporary salons
 import { fixture, api } from "../helpers/finance-fixture.mjs";
@@ -18,18 +18,14 @@ test("IA: conserva el archivo al fallar, permite reintentar y acepta subidas de 
   try {
     f = await fixture(admin);
     const root = "/tenants/" + f.a.id + "/studio";
-    const bytes = await sharp({
-      create: { width: 300, height: 400, channels: 3, background: "#716b64" },
-    })
-      .png()
-      .toBuffer();
+    const bytes = fs.readFileSync("tests/fixtures/fictitious-portrait.jpg");
     const reference = await api(
       root + "/assets",
       "POST",
       {
         kind: "reference",
         consent: true,
-        data: "data:image/png;base64," + bytes.toString("base64"),
+        data: "data:image/jpeg;base64," + bytes.toString("base64"),
       },
       f.owner.cookie,
     );
@@ -104,11 +100,11 @@ test("IA: conserva el archivo al fallar, permite reintentar y acepta subidas de 
       )
       .check();
     await page.getByLabel(/El cliente autoriza enviar su foto/).check();
-    const input = page.getByLabel("Subir foto o usar cámara");
-    const filename = "retratro-de-prueba-para-estudio-virtual.png";
+    const input = page.getByLabel("Subir foto del dispositivo");
+    const filename = "retratro-de-prueba-para-estudio-virtual.jpg";
     await input.setInputFiles({
       name: filename,
-      mimeType: "image/png",
+      mimeType: "image/jpeg",
       buffer: bytes,
     });
     await expect(page.locator(".studio-editor [role=alert]")).toContainText(
@@ -143,8 +139,8 @@ test("IA: conserva el archivo al fallar, permite reintentar y acepta subidas de 
     ).toBeEnabled();
     // A failed replacement must not silently generate with the previous photo.
     await input.setInputFiles({
-      name: "otra-foto.png",
-      mimeType: "image/png",
+      name: "otra-foto.jpg",
+      mimeType: "image/jpeg",
       buffer: bytes,
     });
     await expect(page.locator(".studio-editor [role=alert]")).toBeVisible();
@@ -174,7 +170,7 @@ test("IA: conserva el archivo al fallar, permite reintentar y acepta subidas de 
       ).toBeTruthy();
       await page.locator(".portrait-preview").scrollIntoViewIfNeeded();
       await page.screenshot({
-        path: ".local/screenshots/studio-upload-" + width + ".png",
+        path: ".local/screenshots/studio-upload-" + width + ".jpg",
         fullPage: true,
       });
     }

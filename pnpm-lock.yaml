@@ -47,6 +47,9 @@ importers:
       '@ionic/angular':
         specifier: 9.0.8
         version: 9.0.8(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2))(@angular/forms@22.2.3(@angular/common@22.2.3(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2))(@angular/platform-browser@22.2.3(@angular/common@22.2.3(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)))(rxjs@7.8.2))(@angular/router@22.2.3(@angular/common@22.2.3(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2))(@angular/platform-browser@22.2.3(@angular/common@22.2.3(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)))(rxjs@7.8.2))(rxjs@7.8.2)
+      '@mediapipe/tasks-vision':
+        specifier: 1.2.0
+        version: 1.2.0
       '@nestjs/common':
         specifier: 12.2.0
         version: 12.2.0(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -985,6 +988,9 @@ packages:
   '@lukeed/csprng@1.1.0':
     resolution: {integrity: sha512-Z7C/xXCiGWsg0KuKsHTKJxbWhpI3Vs5GwLfOean7MGyVFGqdRgBbAjOCh6u4bbjPc/8MJ2pZmK/0DLdCbivLDA==}
     engines: {node: '>=8'}
+
+  '@mediapipe/tasks-vision@1.2.0':
+    resolution: {integrity: sha512-7+dr9GbGyTtcuLh11wE5TOn4dNFRncIT9oAWs72620WX99KW5FfzF6rFJ/ChTgXG9vJ6dCiE9FrEEY4CnwPWKQ==}
 
   '@modelcontextprotocol/core@2.3.1':
     resolution: {integrity: sha512-laVmIhPGpWi7rG9q+0UigblRN0Hws/Yjlb6qLFtVqryXVLkc4h+yN8z731POD2LnAGQlFe7/tXhUm7Bi0YB91g==}
@@ -4198,6 +4204,8 @@ snapshots:
     optional: true
 
   '@lukeed/csprng@1.1.0': {}
+
+  '@mediapipe/tasks-vision@1.2.0': {}
 
   '@modelcontextprotocol/core@2.3.1':
     dependencies:

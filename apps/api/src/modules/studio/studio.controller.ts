@@ -29,6 +29,7 @@ const styleInput = z
     description: z.string().max(500).default(""),
     instructions: z.string().trim().min(10).max(1500),
     category: z.enum(["cut", "color", "finish"]),
+    target_scope: z.enum(["hair", "beard", "hair_beard"]).default("hair"),
     employee_id: id.optional(),
     service_id: id,
     reference_asset_id: id,
@@ -58,7 +59,7 @@ export class StudioController {
       ).rows;
       const jobs = (
         await db.query(
-          "SELECT j.id,j.hairstyle_id,j.portrait_asset_id,j.result_asset_id,j.customer_id,j.appointment_id,j.status,j.error,j.assessment,j.assessment_notes,j.assessed_at,j.created_at,j.created_by,h.name,h.service_id,h.employee_id FROM salon.virtual_tryons j JOIN salon.hairstyles h ON h.id=j.hairstyle_id AND h.tenant_id=j.tenant_id JOIN salon.studio_assets a ON a.id=j.portrait_asset_id AND a.tenant_id=j.tenant_id WHERE j.tenant_id=$1 AND j.deleted_at IS NULL AND a.deleted_at IS NULL AND a.expires_at>now() AND ($2::boolean=false OR j.created_by=$3) ORDER BY j.created_at DESC LIMIT 50",
+          "SELECT j.id,j.hairstyle_id,j.target_scope,j.beard_hairstyle_id,j.portrait_asset_id,j.result_asset_id,j.customer_id,j.appointment_id,j.status,j.error,j.assessment,j.assessment_notes,j.assessed_at,j.created_at,j.created_by,h.name,h.service_id,h.employee_id FROM salon.virtual_tryons j JOIN salon.hairstyles h ON h.id=j.hairstyle_id AND h.tenant_id=j.tenant_id JOIN salon.studio_assets a ON a.id=j.portrait_asset_id AND a.tenant_id=j.tenant_id WHERE j.tenant_id=$1 AND j.deleted_at IS NULL AND a.deleted_at IS NULL AND a.expires_at>now() AND ($2::boolean=false OR j.created_by=$3) ORDER BY j.created_at DESC LIMIT 50",
           [tenant, own, user.id],
         )
       ).rows;
@@ -387,7 +388,7 @@ export class StudioController {
             );
         }
         const { rows } = await db.query(
-          "INSERT INTO salon.hairstyles(tenant_id,employee_id,service_id,reference_asset_id,name,description,instructions,category,published,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id",
+          "INSERT INTO salon.hairstyles(tenant_id,employee_id,service_id,reference_asset_id,name,description,instructions,category,published,created_by,target_scope) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id",
           [
             tenant,
             input.employee_id ?? null,
@@ -399,6 +400,7 @@ export class StudioController {
             input.category,
             input.published,
             user.id,
+            input.target_scope,
           ],
         );
         await db.query(
@@ -436,6 +438,17 @@ export class StudioController {
       return { ok: true };
     });
   }
+  @Put("styles/:style/scope") async scope(@Req() req: Request, @Param("tenant") tenant: string, @Param("style") style: string, @Body() body: unknown) {
+    id.parse(tenant); id.parse(style);
+    const input = z.object({target_scope:z.enum(["hair","beard","hair_beard"])}).strict().parse(body);
+    const user = await this.auth.user(req);
+    return this.db.tenant(user,tenant,["owner","manager"],async db=>{
+      const result=await db.query("UPDATE salon.hairstyles SET target_scope=$3 WHERE tenant_id=$1 AND id=$2",[tenant,style,input.target_scope]);
+      if(!result.rowCount)throw new NotFoundException();
+      await this.db.audit(db,tenant,user.id,"studio.style_scope_changed",style);
+      return {ok:true};
+    });
+  }
   @Post("tryons") async create(
     @Req() req: Request,
     @Param("tenant") tenant: string,
@@ -449,6 +462,8 @@ export class StudioController {
           customer_id: id.optional(),
           external_consent: z.literal(true),
           external_consent_provider: z.enum(["replicate", "runway"]).optional(),
+          target_scope: z.enum(["hair", "beard", "hair_beard"]).optional(),
+          beard_hairstyle_id: id.optional(),
           request_key: id,
         })
         .strict()
@@ -504,12 +519,29 @@ export class StudioController {
         );
       const h = (
         await db.query(
-          "SELECT h.id FROM salon.hairstyles h JOIN salon.studio_assets a ON a.tenant_id=h.tenant_id AND a.id=h.reference_asset_id WHERE h.tenant_id=$1 AND h.id=$2 AND h.published AND a.deleted_at IS NULL AND (a.expires_at IS NULL OR a.expires_at>now())",
+          "SELECT h.id,h.target_scope FROM salon.hairstyles h JOIN salon.studio_assets a ON a.tenant_id=h.tenant_id AND a.id=h.reference_asset_id WHERE h.tenant_id=$1 AND h.id=$2 AND h.published AND a.deleted_at IS NULL AND (a.expires_at IS NULL OR a.expires_at>now())",
           [tenant, input.hairstyle_id],
         )
       ).rows[0];
       if (!h)
         throw new BadRequestException("Elige un estilo publicado del salón.");
+      const scope = input.target_scope ?? "hair";
+      if (scope !== "hair_beard" && input.beard_hairstyle_id)
+        throw new BadRequestException("La segunda referencia solo se usa al simular cabello y barba juntos.");
+      if ((scope === "hair" && h.target_scope === "beard") ||
+          (scope === "beard" && h.target_scope === "hair") ||
+          (scope === "hair_beard" && h.target_scope === "beard"))
+        throw new BadRequestException("La referencia no incluye la zona que quieres cambiar.");
+      if (scope === "hair_beard") {
+        if (input.beard_hairstyle_id) {
+          const beard = (await db.query(
+            "SELECT h.id FROM salon.hairstyles h JOIN salon.studio_assets a ON a.tenant_id=h.tenant_id AND a.id=h.reference_asset_id WHERE h.tenant_id=$1 AND h.id=$2 AND h.published AND h.target_scope IN ('beard','hair_beard') AND a.deleted_at IS NULL AND (a.expires_at IS NULL OR a.expires_at>now())",
+            [tenant, input.beard_hairstyle_id],
+          )).rows[0];
+          if (!beard) throw new BadRequestException("Elige una referencia de barba publicada de este salón.");
+        } else if (h.target_scope !== "hair_beard")
+          throw new BadRequestException("Selecciona también una referencia de barba o usa una referencia marcada como cabello y barba.");
+      }
       const photo = (
         await db.query(
           "SELECT id FROM salon.studio_assets WHERE tenant_id=$1 AND id=$2 AND uploaded_by=$3 AND kind='portrait' AND deleted_at IS NULL AND expires_at>now()",
@@ -538,7 +570,7 @@ export class StudioController {
           "Has alcanzado la cuota de simulaciones de este mes.",
         );
       const { rows } = await db.query(
-        "INSERT INTO salon.virtual_tryons(tenant_id,created_by,hairstyle_id,portrait_asset_id,customer_id,request_key,request_hash,provider,model,external_consent_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,now()) RETURNING id",
+        "INSERT INTO salon.virtual_tryons(tenant_id,created_by,hairstyle_id,portrait_asset_id,customer_id,request_key,request_hash,provider,model,external_consent_at,target_scope,beard_hairstyle_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,now(),$10,$11) RETURNING id",
         [
           tenant,
           user.id,
@@ -549,6 +581,8 @@ export class StudioController {
           hash,
           this.provider.id,
           this.provider.model,
+          scope,
+          input.beard_hairstyle_id ?? null,
         ],
       );
       await this.db.audit(

@@ -4,6 +4,7 @@ import RunwayML, {
   TaskTimedOutError,
   toFile,
 } from "@runwayml/sdk";
+import { studioPrompt, StudioScope } from "./studio.prompt";
 @Injectable()
 export class StudioProvider {
   readonly id = process.env.STUDIO_PROVIDER ?? "replicate";
@@ -30,11 +31,14 @@ export class StudioProvider {
     signal: AbortSignal,
     model = this.model,
     provider = this.id,
+    options: { scope?: StudioScope; beardReference?: Buffer; beardInstructions?: string } = {},
   ) {
     if (!this.enabled(provider))
       throw new ServiceUnavailableException(
         "La API de IA todavía no está configurada.",
       );
+    const scope = options.scope ?? "hair";
+    const prompt = studioPrompt(provider, scope, instructions, options.beardInstructions);
     // Dispatch by the provider saved on the job, never by today's configuration.
     if (provider === "runway") {
       if (model !== "gen4_image" && model !== "gen4_image_turbo")
@@ -59,20 +63,20 @@ export class StudioProvider {
           { signal },
         ),
       ]);
-      const promptText = (
-        "Photorealistic salon consultation preview of @client. Preserve their face, identity, skin tone, age, facial proportions, expression, pose, clothing and background. Use @hairstyle only as a reference for hair cut, texture and color. Change hair only. Never copy the reference person's face or body. No face beautification, text or watermark. Show only the client. Requested hairstyle: " +
-        instructions
-      ).slice(0, 1000);
+      const beard = options.beardReference ? await client.uploads.createEphemeral(
+        { file: await toFile(options.beardReference, "beard.jpg", { type: "image/jpeg" }) }, { signal },
+      ) : null;
       try {
         const task = await client.textToImage
           .create(
             {
               model,
               ratio: "1080:1440",
-              promptText,
+              promptText: prompt,
               referenceImages: [
                 { uri: clientPhoto.uri, tag: "client" },
                 { uri: hairstyle.uri, tag: "hairstyle" },
+                ...(beard ? [{ uri: beard.uri, tag: "beard" }] : []),
               ],
             },
             { signal },
@@ -120,14 +124,12 @@ export class StudioProvider {
     });
     const { image } = await generateImage({
       model: replicate.image(model),
-      prompt:
-        "Create a photorealistic salon consultation preview. Image 1 is the client: preserve their face, identity, skin tone, age, facial proportions, expression, pose, clothing and background. Image 2 is a hairstyle reference only: adapt its hair cut, texture and color to the client. Do not copy the face or body from image 2. Change hair only; no face beautification, no text or watermark. The output must show only the client from image 1. Requested hairstyle: " +
-        instructions,
+      prompt,
       // The current Replicate schema uses an array. The installed adapter's
       // prompt.images mapping sends input_image/input_image_2, which this model ignores.
       providerOptions: {
         replicate: {
-          input_images: [portrait, reference].map(
+          input_images: [portrait, reference, ...(options.beardReference ? [options.beardReference] : [])].map(
             (bytes) => "data:image/jpeg;base64," + bytes.toString("base64"),
           ),
           aspect_ratio: "match_input_image",
